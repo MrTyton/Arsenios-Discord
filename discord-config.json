@@ -1,0 +1,16 @@
+{
+    "sleep_time": 600,
+    "sleep_count": 12,
+    "hard_restarts": true,
+    "init_sleep": 30,
+    "reset_sleep": 30,
+    "programs": [
+        {
+            "name": "Arsenios",
+            "program": "python",
+            "args": [
+                "bots/arsenios.py"
+            ]
+        }
+    ]
+}
