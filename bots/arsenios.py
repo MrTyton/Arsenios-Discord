@@ -434,6 +434,7 @@ class ArseniosBot(ChatBot):
                 seeds = int(container.find("td", style="color: green;").text)
                 if not seeds: continue
                 leechers = int(container.find("td", style="color: red;").text)
+                date=container.find("td", data-timestamp=True).text
                 if "magnet" in hrefs[2]['href']:
                     magnet = hrefs[2]['href']
                     torrent= None
@@ -450,7 +451,8 @@ class ArseniosBot(ChatBot):
                 else:
                     link_string = f"[Magnet]({magnet})"
                 embd.add_field(name="Links", value=link_string)
-                embd.add_field(name="Status", value=f"{seeds} seeders, {leechers} leechers")
+                embd.add_field(name="Status", value=f"{seeds} seeders")
+                embd.add_field(name="Uploaded", value=f"{date}")
                 embd.add_field(name="More Results", value=f"[Search]({tube}/?q={self.replace('%20'.join(args))}&f=0&c=1_2)")
                 return await self.embed(mobj.channel, embd)     
             
