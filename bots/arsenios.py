@@ -148,7 +148,7 @@ class ArseniosBot(ChatBot):
         embed.add_field(name="Episode Count", value=str(anime.episodes))
         embed.add_field(name="Type", value=anime.type)
         embed.add_field(name="Status", value=anime.status)
-        embed.add_field(name="Dates", value=f'{anime.start_date} through {anime.end_date}' if anime.start_date != anime.end_date else f'{anime.start_date}')
+        embed.add_field(name="Dates", value=f'{anime.start_date} through {anime.end_date if anime.end_date != "0000-00-00" else "present"}' if anime.start_date != anime.end_date else f'{anime.start_date}')
         embed.add_field(name="Synopsis", value=anime.synopsis.split("\n\n", maxsplit=1)[0])
 
         await self.embed(mobj.channel, embed)
@@ -200,7 +200,7 @@ class ArseniosBot(ChatBot):
         embed.add_field(name="Volume Count", value=str(manga.volumes))
         embed.add_field(name="Type", value=manga.type)
         embed.add_field(name="Status", value=manga.status)
-        embed.add_field(name="Dates", value=f'{manga.start_date} through {manga.end_date}' if manga.start_date != manga.end_date else f'{manga.start_date}')
+        embed.add_field(name="Dates", value=f'{manga.start_date} through {manga.end_date if manga.end_date != "0000-00-00" else "present"}' if manga.start_date != manga.end_date else f'{manga.start_date}')
         embed.add_field(name="Synopsis", value=manga.synopsis.split("\n\n", maxsplit=1)[0])
 
         await self.embed(mobj.channel, embed) 
@@ -409,7 +409,7 @@ class ArseniosBot(ChatBot):
             return await self.message(mobj.channel, "Empty search terms")
         
         tube = "https://www.nyaa.si"
-        resp = get(f"{tube}/?q={self.replace(' '.join(args))}&f=0&c=1_2")
+        resp = get(f"{tube}/?q={self.replace(' '.join(args))}&f=0&c=1_2&s=id&o=desc")
         if resp.status_code != 200:
             return await self.message(mobj.channel, "Failed to retrieve search")
 
@@ -427,20 +427,26 @@ class ArseniosBot(ChatBot):
         for find_horrible in [True, False]:
             for container in items:
                 hrefs = container.find_all('a')
-                link = f"{tube}{hrefs[1]['href']}"
-                the_title = f"{hrefs[1]['title']}"
+                locator = 0
+                for i,current in enumerate(hrefs[1:]):
+                    if "title" in current.attrs and 'comments' in current['href']:
+                        continue
+                    locator = i
+                    break
+                link = f"{tube}{hrefs[1+locator]['href']}"
+                the_title = f"{hrefs[1+locator]['title']}"
                 if find_horrible:
                     if "HorribleSubs" not in the_title: continue
                 seeds = int(container.find("td", style="color: green;").text)
                 if not seeds: continue
                 leechers = int(container.find("td", style="color: red;").text)
-                date=container.find("td", data-timestamp=True).text
-                if "magnet" in hrefs[2]['href']:
-                    magnet = hrefs[2]['href']
+                date=container.find("td", attrs={"data-timestamp":True}).text
+                if "magnet" in hrefs[2+locator]['href']:
+                    magnet = hrefs[2+locator]['href']
                     torrent= None
                 else:
-                    torrent = hrefs[2]['href']
-                    magnet = hrefs[3]['href']
+                    torrent = f"https://nyaa.si/{hrefs[2+locator]['href']}"
+                    magnet = hrefs[3+locator]['href']
                 embd = Embed(
                     title=the_title,
                     color=Color(0x7289da),
@@ -451,9 +457,9 @@ class ArseniosBot(ChatBot):
                 else:
                     link_string = f"[Magnet]({magnet})"
                 embd.add_field(name="Links", value=link_string)
-                embd.add_field(name="Status", value=f"{seeds} seeders")
+                embd.add_field(name="Status", value=f"{seeds} seeders, {leechers} leechers")
                 embd.add_field(name="Uploaded", value=f"{date}")
-                embd.add_field(name="More Results", value=f"[Search]({tube}/?q={self.replace('%20'.join(args))}&f=0&c=1_2)")
+                embd.add_field(name="More Results", value=f"[Search]({tube}/?q={self.replace('%20'.join(args))}&f=0&c=1_2&s=id&o=desc)")
                 return await self.embed(mobj.channel, embd)     
             
         return await self.message(mobj.channel, "No Torrents with seeders found")
