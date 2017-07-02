@@ -17,6 +17,7 @@ from mtgsdk import Card
 from asyncio import Lock, sleep
 from collections import defaultdict
 from datetime import datetime
+from utils import unescape
 
 class ArseniosBot(ChatBot):
     """
@@ -99,6 +100,7 @@ class ArseniosBot(ChatBot):
         self.sleepers = set()
         self.sleepers_lock = Lock()
         self.create_reactions()
+        self.emojis = {}
         
         
     @ChatBot.action("[String]")
@@ -149,7 +151,7 @@ class ArseniosBot(ChatBot):
         embed.add_field(name="Type", value=anime.type)
         embed.add_field(name="Status", value=anime.status)
         embed.add_field(name="Dates", value=f'{anime.start_date} through {anime.end_date if anime.end_date != "0000-00-00" else "present"}' if anime.start_date != anime.end_date else f'{anime.start_date}')
-        embed.add_field(name="Synopsis", value=anime.synopsis.split("\n\n", maxsplit=1)[0])
+        embed.add_field(name="Synopsis", value=unescape(anime.synopsis).split("\n\n", maxsplit=1)[0])
 
         await self.embed(mobj.channel, embed)
         
@@ -197,11 +199,11 @@ class ArseniosBot(ChatBot):
         )
         #embed.set_author(name=author.display_name, icon_url=avatar)
         embed.set_image(url=manga.image)
-        embed.add_field(name="Volume Count", value=str(manga.volumes))
+        embed.add_field(name="Length", value=f'{manga.chapters} Chapters, {manga.volumes} Volumes')
         embed.add_field(name="Type", value=manga.type)
         embed.add_field(name="Status", value=manga.status)
         embed.add_field(name="Dates", value=f'{manga.start_date} through {manga.end_date if manga.end_date != "0000-00-00" else "present"}' if manga.start_date != manga.end_date else f'{manga.start_date}')
-        embed.add_field(name="Synopsis", value=manga.synopsis.split("\n\n", maxsplit=1)[0])
+        embed.add_field(name="Synopsis", value=unescape(manga.synopsis).split("\n\n", maxsplit=1)[0])
 
         await self.embed(mobj.channel, embed) 
     
@@ -252,6 +254,24 @@ class ArseniosBot(ChatBot):
             card = cards_[key]
         except (ValueError, KeyError):
             return await self.message(mobj.channel, "Invalid key.")
+        
+        if not len(self.emojis):
+            for cur in self.client.get_all_emojis():
+                self.emojis[cur.name] = cur
+            
+        mana_dict = {"{B}":self.emojis['BlackMana'], "{U}":self.emojis['BlueMana'], "{W}":self.emojis['WhiteMana'], "{R}":self.emojis['RedMana'], "{G}":self.emojis['GreenMana'], "{X}":self.emojis['XMana'], "{U/P}":self.emojis['PhyBlue'],"{B/P}":self.emojis['PhyBlack'],"{G/P}":self.emojis['PhyGreen'],"{W/P}":self.emojis['PhyWhite'],"{R/P}":self.emojis['PhyRed'],
+                    "{1}":self.emojis["1Mana"],"{2}":self.emojis["2Mana"],"{3}":self.emojis["3Mana"],"{4}":self.emojis["4Mana"],"{5}":self.emojis["5Mana"],"{6}":self.emojis["6Mana"],"{7}":self.emojis["7Mana"],"{8}":self.emojis["8Mana"],"{9}":self.emojis["9Mana"],"{10}":self.emojis["10Mana"],"{15}":self.emojis["15Mana"],"{C}":self.emojis["CMana"],"{0}":self.emojis["0Mana"],"{12}":self.emojis["12Mana"],"{13}":self.emojis["13Mana"],"{11}":self.emojis["11Mana"],
+                    "{T}":self.emojis['Tap'],
+        
+        
+        }
+        
+        def replace_symbols(input):
+            for cur in mana_dict:
+                if cur in input:
+                    input = input.replace(cur, str(mana_dict[cur]))
+            return input
+        
         embd = Embed(
             title=card.name,
             colour=Color(0x7289da),
@@ -262,7 +282,11 @@ class ArseniosBot(ChatBot):
         else:
             embd.add_field(name="Color", value=f'Colorless')
         if card.mana_cost:
-            embd.add_field(name="Mana Cost", value=card.mana_cost)
+            mana_costs = replace_symbols(card.mana_cost)
+            #mana_costs = card.mana_cost.replace("{", "").replace("}", " ").strip().split(" ")
+            #mana_costs = " ".join([str(mana_dict[cur]) if cur in mana_dict else cur for cur in mana_costs])
+        
+            embd.add_field(name="Mana Cost", value=mana_costs)
             embd.add_field(name="CMC", value=card.cmc)
         last_set = card.printings[-1]
         embd.add_field(name="Last Printing", value=last_set)
@@ -277,7 +301,7 @@ class ArseniosBot(ChatBot):
         embd.add_field(name="Legality", value='\n'.join(legalities.values()))
         embd.add_field(name="Type", value=card.type)
         if card.supertypes:
-            embd.add_field(name="Supertypers", value=card.supertypes)
+            embd.add_field(name="Supertypes", value=f"{', '.join(card.supertypes)}")
         if card.subtypes:
             embd.add_field(name="Subtypes", value=f"{', '.join(card.subtypes)}")
         if 'creature' in card.type:
@@ -285,7 +309,8 @@ class ArseniosBot(ChatBot):
         if 'planeswalker' in card.type:
             embd.add_field(name="Loyalty", value=card.loyalty)
         if card.text:
-            embd.add_field(name="Card Text", value=card.text)
+            text = replace_symbols(card.text)
+            embd.add_field(name="Card Text", value=text)
         latest_picture = Card.where(name=card.name, set=last_set).all()[0]
         embd.set_image(url=latest_picture.image_url)
         
