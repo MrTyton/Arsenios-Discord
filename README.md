@@ -16,12 +16,6 @@ Discord, the popular chat service aimed at gamers, supports a WebSocket API for 
 
 In it's current state, this project has Python code wrapping around the `discord.py` library itself to aid in the development of bots, as well as bots written in Python with many different goals of doing as much as they can.
 
-Currently, there's two types of Bots that can be used with Discord:
-* Interactive chat bot - a bot that receives and can send messages to channels
-* WebHook bot - a bot that can only send data to a channel via a URI endpoint
-
-Right now this project uses mostly Interactives. WebHooks are being explored.
-
 ### Requirements
 
 To run this project you will need:
