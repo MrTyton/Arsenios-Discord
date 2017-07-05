@@ -22,7 +22,7 @@ def unescape(text):
         else:
             # named entity
             try:
-                text = chr(htmlentitydefs.codepoint[text[1:-1]])
+                text = chr(codepoint[text[1:-1]])
             except KeyError:
                 pass
         return text # leave as is

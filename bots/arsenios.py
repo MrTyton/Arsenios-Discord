@@ -191,7 +191,6 @@ class ArseniosBot(ChatBot):
             manga = mangas_[key]
         except (ValueError, KeyError):
             return await self.message(mobj.channel, "Invalid key.")
-        
         embed = Embed(
             title=manga.title,
             colour=Color(0x7289da),
