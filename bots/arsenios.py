@@ -19,6 +19,7 @@ from collections import defaultdict
 from datetime import datetime
 from utils import unescape
 
+
 class ArseniosBot(ChatBot):
     """
     Dumb Bot is a basic toy bot integration
@@ -29,7 +30,7 @@ class ArseniosBot(ChatBot):
     allow Dumb Bot to access the shared pool
     """
 
-    STATUS = "I'm a bot, Beep Bloop!"
+    STATUS = "Beep Bloop Bork"
     def read_mal(self):
         """
         Read a bot's key JSON to get it's token/webhook link
@@ -81,6 +82,13 @@ class ArseniosBot(ChatBot):
             pickle.dump(self.quotes, fp)
         return
     
+    def load_eightball(self):
+        """
+        Load Magic 8-ball answers
+        """
+        with open(Path(self.DATA_FOLDER, f'{self.name}.8ball'), 'r') as fp:
+            return list(map(str.strip, fp.readlines()))
+    
             
             
     # Used to convert chars to emojis for /roll
@@ -101,6 +109,7 @@ class ArseniosBot(ChatBot):
         self.sleepers_lock = Lock()
         self.create_reactions()
         self.emojis = {}
+        self.eightball = self.load_eightball()
         
         
     @ChatBot.action("[String]")
@@ -350,9 +359,8 @@ class ArseniosBot(ChatBot):
         Asks the magic 8-bot a question, and recieve a response
         """
         if not args: return await self.message(mobj.channel, "Question is hazy, please try again.")
-        answers = ["It is certain",'It is decidedly so','Without a doubt','Yes definitely','You may rely on it','As I see it, yes','Most likely','Outlook good','Yes','Signs point to yes','Reply hazy try again','Ask again later','Better not tell you now','Cannot predict now','Concentrate and ask again',"Don't count on it",'My reply is no','My sources say no','Outlook not so good','Very doubtful']
         
-        return await self.message(mobj.channel, choice(answers))
+        return await self.message(mobj.channel, choice(self.eightball))
 
 
     @ChatBot.action('[Number]|[Number d Number]')
