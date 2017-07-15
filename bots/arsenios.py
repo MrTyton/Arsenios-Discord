@@ -49,21 +49,34 @@ class ArseniosBot(ChatBot):
         """
         Loads quotes from quotes pickle file
         """
-        with open(Path(self.DATA_FOLDER, f'{self.name}.data'), 'rb')  as fp:
-            quotes = pickle.load(fp)
-            if not quotes:
+        if isfile(Path(self.DATA_FOLDER, f'{self.name}.data')):
+            with open(Path(self.DATA_FOLDER, f'{self.name}.data'), 'rb')  as fp:
+                quotes = pickle.load(fp)
+                if not quotes:
+                    quotes = {}
+        else:
+            self.logger("There is no quotes file, creating.")
+            with open(Path(self.DATA_FOLDER, f'{self.name}.data'), 'wb')  as fp:
                 quotes = {}
-            return quotes
+                pickle.dump(quotes, fp)
+        return quotes
             
     def load_notifications(self):
         """
         Loads notification settings from pickle file
         """
-        with open(Path(self.DATA_FOLDER, f'{self.name}.notifications'), 'rb') as fp:
-            notifications = pickle.load(fp)
-            if not notifications:
+        if isfile(Path(self.DATA_FOLDER, f'{self.name}.notifications')):
+            with open(Path(self.DATA_FOLDER, f'{self.name}.notifications'), 'rb') as fp:
+                notifications = pickle.load(fp)
+                if not notifications:
+                    notifications = defaultdict(set)
+        else:
+            self.logger("There is no notification file, creating.")
+            with open(Path(self.DATA_FOLDER, f'{self.name}.notifications'), 'wb') as fp:
                 notifications = defaultdict(set)
-            return notifications
+                pickle.dump(notifications, fp)
+                
+        return notifications
             
     def save_notifications(self):
         """
@@ -86,8 +99,14 @@ class ArseniosBot(ChatBot):
         """
         Load Magic 8-ball answers
         """
-        with open(Path(self.DATA_FOLDER, f'{self.name}.8ball'), 'r') as fp:
-            return list(map(str.strip, fp.readlines()))
+        if isfile(Path(self.DATA_FOLDER, f'{self.name}.8ball')):
+            with open(Path(self.DATA_FOLDER, f'{self.name}.8ball'), 'r') as fp:
+                return list(map(str.strip, fp.readlines()))
+        else:
+            self.logger("There is no 8ball file, creating.")
+            with open(Path(self.DATA_FOLDER, f'{self.name}.8ball'), 'w') as fp:
+                fp.write("I have no idea, I'm not psychic.")
+            return ["I have no idea, I'm not psychic."]
     
             
             
