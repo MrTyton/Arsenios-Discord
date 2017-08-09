@@ -233,19 +233,15 @@ class ArseniosBot(ChatBot):
         embed.add_field(name="Synopsis", value=unescape(manga.synopsis).split("\n\n", maxsplit=1)[0])
 
         await self.embed(mobj.channel, embed) 
-    
-    @ChatBot.action('[Card Name]')
-    async def card(self, args, mobj):
-    
-        """
-        Does a search for requested magic card.
-        If there are multiple cards with similar name, will prompt to select one.
-        """
+
+        
+    async def get_card(self, args, mobj):
         author = mobj.author
         try:
             cards = Card.where(name=" ".join(args)).all()
         except:
-            return await self.message(mobj.channel, "Something broke when requesting cards.")
+            await self.message(mobj.channel, "Something broke when requesting cards.")
+            return None
         
         cards_ = dict()
         entered = []
@@ -257,7 +253,8 @@ class ArseniosBot(ChatBot):
                 entered.append(cur.name)
                 if len(entered) > 15: break
         if len(cards_) == 0:
-            return await self.message(mobj.channel, "No cards found.")
+            await self.message(mobj.channel, "No cards found.")
+            return None
         if len(cards_) > 1:
             message = "```What card would you like:\n"
             for anime in cards_.items():
@@ -271,16 +268,52 @@ class ArseniosBot(ChatBot):
 
             msg = await self.client.wait_for_message(timeout=10.0, author=author)
             
-            if not msg: return
+            if not msg: return None
             
             key = int(msg.content)-1
         else:
             key = 0
             
         try:
-            card = cards_[key]
+            return cards_[key]
         except (ValueError, KeyError):
-            return await self.message(mobj.channel, "Invalid key.")
+            await self.message(mobj.channel, "Invalid key.")
+            return None
+        
+    @ChatBot.action('[Card Name]')
+    async def card(self, args, mobj):
+    
+        """
+        Does a search for requested magic card.
+        If there are multiple cards with similar name, will prompt to select one.
+        Displays only the picture of the card. For full information use !cardfull
+        """
+        
+        card = await self.get_card(args, mobj)
+        if not card: return
+        
+        embd = Embed(
+            title=card.name,
+            colour=Color(0x7289da),
+            url=f"http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid={card.multiverse_id}"
+        )
+        last_set = card.printings[-1]
+        latest_picture = Card.where(name=card.name, set=last_set).all()[0]
+        embd.set_image(url=latest_picture.image_url)
+        
+        return await self.embed(mobj.channel, embd)
+
+        
+    @ChatBot.action('[Card Name]')
+    async def cardfull(self, args, mobj):
+    
+        """
+        Does a search for requested magic card.
+        If there are multiple cards with similar name, will prompt to select one.
+        Displays all the information about the card. For only the card image, use !card
+        """
+        card = await self.get_card(args, mobj)
+        if not card: return
         
         if not len(self.emojis):
             for cur in self.client.get_all_emojis():
