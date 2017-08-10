@@ -10,16 +10,16 @@ class MALBOT:
     
     def __init__(self, bot):
         self.bot = bot
-        user, password = self.read_mal(self.bot)
+        user, password = self.read_mal()
         self.bot.pyanimelist = PyAnimeList(username=user, password=password, user_agent="Arsenios_Bot")
     
-    @staticmethod
-    def read_mal(bot):
+    
+    def read_mal(self):
         """
         Read a bot's key JSON to get it's token/webhook link
         Keys must be stored in the key folder and have a basic 'key':'<keytext>' object
         """
-        with open(Path(bot.KEY_FOLDER, f'{bot.name}.key'), 'r') as f:
+        with open(Path(self.bot.KEY_FOLDER, f'{self.bot.name}.key'), 'r') as f:
             datum = jload(f)
             user = datum.get("user", "")
             password = datum.get("password", "")

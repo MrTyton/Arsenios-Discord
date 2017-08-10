@@ -15,7 +15,7 @@ class CARDBOT:
         try:
             cards = Card.where(name=" ".join(args)).all()
         except:
-            await self.message(mobj.channel, "Something broke when requesting cards.")
+            await self.bot.message(mobj.channel, "Something broke when requesting cards.")
             return None
         
         cards_ = dict()
@@ -28,7 +28,7 @@ class CARDBOT:
                 entered.append(cur.name)
                 if len(entered) > 15: break
         if len(cards_) == 0:
-            await self.message(mobj.channel, "No cards found.")
+            await self.bot.message(mobj.channel, "No cards found.")
             return None
         if len(cards_) > 1:
             message = "```What card would you like:\n"
@@ -39,9 +39,9 @@ class CARDBOT:
             message += "\nUse the number to the side of the name as a key to select it!```"
 
             
-            await self.message(mobj.channel, message)
+            await self.bot.message(mobj.channel, message)
 
-            msg = await self.client.wait_for_message(timeout=10.0, author=author)
+            msg = await self.bot.client.wait_for_message(timeout=10.0, author=author)
             
             if not msg: return None
             
@@ -52,7 +52,7 @@ class CARDBOT:
         try:
             return cards_[key]
         except (ValueError, KeyError):
-            await self.message(mobj.channel, "Invalid key.")
+            await self.bot.message(mobj.channel, "Invalid key.")
             return None
         
     @ChatBot.action('[Card Name]')

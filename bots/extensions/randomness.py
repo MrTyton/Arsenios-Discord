@@ -9,19 +9,19 @@ class RANDOMBOT():
 
     def __init__(self, bot):
         self.bot = bot
-        self.bot.eightball = self.load_eightball(self.bot)
+        self.bot.eightball = self.load_eightball()
     
-    @staticmethod
+    
     def load_eightball(self):
         """
         Load Magic 8-ball answers
         """
-        if isfile(Path(self.DATA_FOLDER, f'{self.name}.8ball')):
-            with open(Path(self.DATA_FOLDER, f'{self.name}.8ball'), 'r') as fp:
+        if isfile(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.8ball')):
+            with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.8ball'), 'r') as fp:
                 return list(map(str.strip, fp.readlines()))
         else:
-            self.logger("There is no 8ball file, creating.")
-            with open(Path(self.DATA_FOLDER, f'{self.name}.8ball'), 'w') as fp:
+            self.bot.logger("There is no 8ball file, creating.")
+            with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.8ball'), 'w') as fp:
                 fp.write("I have no idea, I'm not psychic.")
             return ["I have no idea, I'm not psychic."]    
         
