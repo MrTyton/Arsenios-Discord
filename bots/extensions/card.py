@@ -8,6 +8,7 @@ class CARDBOT:
     def __init__(self, bot):
         self.bot = bot
         self.bot.get_card = self.get_card #there has to be a better way to do this
+        self.bot.magic_emojis = {}
     
     
     async def get_card(self, args, mobj):
@@ -90,13 +91,13 @@ class CARDBOT:
         card = await self.get_card(args, mobj)
         if not card: return
         
-        if not len(self.emojis):
+        if not len(self.magic_emojis):
             for cur in self.client.get_all_emojis():
-                self.emojis[cur.name] = cur
+                self.magic_emojis[cur.name] = cur
             
-        mana_dict = {"{B}":self.emojis['BlackMana'], "{U}":self.emojis['BlueMana'], "{W}":self.emojis['WhiteMana'], "{R}":self.emojis['RedMana'], "{G}":self.emojis['GreenMana'], "{X}":self.emojis['XMana'], "{U/P}":self.emojis['PhyBlue'],"{B/P}":self.emojis['PhyBlack'],"{G/P}":self.emojis['PhyGreen'],"{W/P}":self.emojis['PhyWhite'],"{R/P}":self.emojis['PhyRed'],
-                    "{1}":self.emojis["1Mana"],"{2}":self.emojis["2Mana"],"{3}":self.emojis["3Mana"],"{4}":self.emojis["4Mana"],"{5}":self.emojis["5Mana"],"{6}":self.emojis["6Mana"],"{7}":self.emojis["7Mana"],"{8}":self.emojis["8Mana"],"{9}":self.emojis["9Mana"],"{10}":self.emojis["10Mana"],"{15}":self.emojis["15Mana"],"{C}":self.emojis["CMana"],"{0}":self.emojis["0Mana"],"{12}":self.emojis["12Mana"],"{13}":self.emojis["13Mana"],"{11}":self.emojis["11Mana"],
-                    "{T}":self.emojis['Tap'],
+        mana_dict = {"{B}":self.magic_emojis['BlackMana'], "{U}":self.magic_emojis['BlueMana'], "{W}":self.magic_emojis['WhiteMana'], "{R}":self.magic_emojis['RedMana'], "{G}":self.magic_emojis['GreenMana'], "{X}":self.magic_emojis['XMana'], "{U/P}":self.magic_emojis['PhyBlue'],"{B/P}":self.magic_emojis['PhyBlack'],"{G/P}":self.magic_emojis['PhyGreen'],"{W/P}":self.magic_emojis['PhyWhite'],"{R/P}":self.magic_emojis['PhyRed'],
+                    "{1}":self.magic_emojis["1Mana"],"{2}":self.magic_emojis["2Mana"],"{3}":self.magic_emojis["3Mana"],"{4}":self.magic_emojis["4Mana"],"{5}":self.magic_emojis["5Mana"],"{6}":self.magic_emojis["6Mana"],"{7}":self.magic_emojis["7Mana"],"{8}":self.magic_emojis["8Mana"],"{9}":self.magic_emojis["9Mana"],"{10}":self.magic_emojis["10Mana"],"{15}":self.magic_emojis["15Mana"],"{C}":self.magic_emojis["CMana"],"{0}":self.magic_emojis["0Mana"],"{12}":self.magic_emojis["12Mana"],"{13}":self.magic_emojis["13Mana"],"{11}":self.magic_emojis["11Mana"],
+                    "{T}":self.magic_emojis['Tap'],
         
         
         }
