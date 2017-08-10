@@ -1,24 +1,18 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
-from random import randint, choice
+
 from Bot import ChatBot, Bot
-from requests import get
-from bs4 import BeautifulSoup as BS
 from discord import Embed, Color
-from pyanimelist import PyAnimeList
-from json import load as jload
 from pathlib import Path
 from os import listdir
 from os.path import isfile, join
-from random import choice
 import pickle
-from mtgsdk import Card
 from asyncio import Lock, sleep
 from collections import defaultdict
 from datetime import datetime
-from utils import unescape
 
+import importlib
 
 class ArseniosBot(ChatBot):
     """
@@ -31,19 +25,6 @@ class ArseniosBot(ChatBot):
     """
 
     STATUS = "Beep Bloop Bork"
-    def read_mal(self):
-        """
-        Read a bot's key JSON to get it's token/webhook link
-        Keys must be stored in the key folder and have a basic 'key':'<keytext>' object
-        """
-        with open(Path(self.KEY_FOLDER, f'{self.name}.key'), 'r') as f:
-            datum = jload(f)
-            user = datum.get("user", "")
-            password = datum.get("password", "")
-            if not (user or password):
-                raise IOError("Key not found in JSON keyfile")
-            return user, password
-        return None
         
     def load_quotes(self):
         """
@@ -95,20 +76,25 @@ class ArseniosBot(ChatBot):
             pickle.dump(self.quotes, fp)
         return
     
-    def load_eightball(self):
-        """
-        Load Magic 8-ball answers
-        """
-        if isfile(Path(self.DATA_FOLDER, f'{self.name}.8ball')):
-            with open(Path(self.DATA_FOLDER, f'{self.name}.8ball'), 'r') as fp:
-                return list(map(str.strip, fp.readlines()))
+    def load_cog(self, extension): 
+        i = importlib.import_module(extension)
+        i.setup(self)
+        return
+        
+    def load_extensions(self):
+        if isfile(Path(self.DATA_FOLDER, f'{self.name}.extensions')):
+            with open(Path(self.DATA_FOLDER, f'{self.name}.extensions'), 'r') as fp:
+                for extension in fp.read().splitlines():
+                    self.logger(f"Loading {extension}")
+                    self.load_cog(extension)
         else:
-            self.logger("There is no 8ball file, creating.")
-            with open(Path(self.DATA_FOLDER, f'{self.name}.8ball'), 'w') as fp:
-                fp.write("I have no idea, I'm not psychic.")
-            return ["I have no idea, I'm not psychic."]
+            self.logger("There is no extension file, creating.")
+            with open(Path(self.DATA_FOLDER, f'{self.name}.extensions'), 'w') as fp:
+                fp.write("\n")
+        return
+                    
+
     
-            
             
     # Used to convert chars to emojis for /roll
     emojis = {f"{i}":x for i, x in enumerate([f":{x}:" for x in
@@ -118,8 +104,6 @@ class ArseniosBot(ChatBot):
     def __init__(self, name):
         super(ArseniosBot, self).__init__(name)
         self.filegen = self._create_filegen("shared")
-        user, password = self.read_mal()
-        self.pyanimelist = PyAnimeList(username=user, password=password, user_agent="Arsenios_Bot")
         self.quotes = self.load_quotes()
         self.quote_lock = Lock()
         self.notifications = self.load_notifications()
@@ -128,253 +112,9 @@ class ArseniosBot(ChatBot):
         self.sleepers_lock = Lock()
         self.create_reactions()
         self.emojis = {}
-        self.eightball = self.load_eightball()
         
-        
-    @ChatBot.action("[String]")
-    async def anime(self, args, mobj):
-    
-        """
-        Does a MAL search to find requested anime. If there is more than 1 option, will ask up to the first 15 choices. You have 10 seconds to respond.
-        """
-    
-        author = mobj.author
-        try:
-            animes = await self.pyanimelist.search_all_anime(f"{' '.join(args)}")
-        except:
-            return await self.message(mobj.channel, "Cannot find anything")
-        
-        animes_ = dict(enumerate(animes[:15]))
-        if len(animes_) > 1:
-            message = "```What anime would you like:\n"
-            for anime in animes_.items():
-          
-                message += "[{}] {}\n".format(str(anime[0]+1), anime[1].title)
-            
-            message += "\nUse the number to the side of the anime as a key to select it!```"
+        self.load_extensions()
 
-            
-            await self.message(mobj.channel, message)
-
-            msg = await self.client.wait_for_message(timeout=10.0, author=author)
-            
-            if not msg: return
-            
-            key = int(msg.content)-1
-        else:
-            key = 0
-        try:
-            anime = animes_[key]
-        except (ValueError, KeyError):
-            return await self.message(mobj.channel, "Invalid key.")
-        
-        embed = Embed(
-            title=anime.title,
-            colour=Color(0x7289da),
-            url="https://myanimelist.net/anime/{0.id}/{0.title}".format(anime).replace(" ", "%20")
-        )
-        #embed.set_author(name=author.display_name, icon_url=avatar)
-        embed.set_image(url=anime.image)
-        embed.add_field(name="Episode Count", value=str(anime.episodes))
-        embed.add_field(name="Type", value=anime.type)
-        embed.add_field(name="Status", value=anime.status)
-        embed.add_field(name="Dates", value=f'{anime.start_date} through {anime.end_date if anime.end_date != "0000-00-00" else "present"}' if anime.start_date != anime.end_date else f'{anime.start_date}')
-        embed.add_field(name="Synopsis", value=unescape(anime.synopsis).split("\n\n", maxsplit=1)[0])
-
-        await self.embed(mobj.channel, embed)
-        
-    @ChatBot.action("[String]")
-    async def manga(self, args, mobj):
-    
-        """
-        Does a MAL search to find requested manga. If there is more than 1 option, will ask up to the first 15 choices. You have 10 seconds to respond.
-        """
-    
-        author = mobj.author
-        try:
-            mangas = await self.pyanimelist.search_all_manga(f"{' '.join(args)}")
-        except:
-            return await self.message(mobj.channel, "Cannot find anything")
-            
-        mangas_ = dict(enumerate(mangas[:15]))
-        if len(mangas_) > 1:
-            message = "```What manga would you like:\n"
-            for manga in mangas_.items():
-          
-                message += "[{}] {}\n".format(str(manga[0]+1), manga[1].title)
-            
-            message += "\nUse the number to the side of the manga as a key to select it!```"
-
-            
-            await self.message(mobj.channel, message)
-
-            msg = await self.client.wait_for_message(timeout=10.0, author=author)
-            
-            if not msg: return
-            
-            key = int(msg.content)-1
-        else:
-            key = 0
-        try:
-            manga = mangas_[key]
-        except (ValueError, KeyError):
-            return await self.message(mobj.channel, "Invalid key.")
-        embed = Embed(
-            title=manga.title,
-            colour=Color(0x7289da),
-            url="https://myanimelist.net/manga/{0.id}/{0.title}".format(manga).replace(" ", "%20")
-        )
-        #embed.set_author(name=author.display_name, icon_url=avatar)
-        embed.set_image(url=manga.image)
-        embed.add_field(name="Length", value=f'{manga.chapters} Chapters, {manga.volumes} Volumes')
-        embed.add_field(name="Type", value=manga.type)
-        embed.add_field(name="Status", value=manga.status)
-        embed.add_field(name="Dates", value=f'{manga.start_date} through {manga.end_date if manga.end_date != "0000-00-00" else "present"}' if manga.start_date != manga.end_date else f'{manga.start_date}')
-        embed.add_field(name="Synopsis", value=unescape(manga.synopsis).split("\n\n", maxsplit=1)[0])
-
-        await self.embed(mobj.channel, embed) 
-
-        
-    async def get_card(self, args, mobj):
-        author = mobj.author
-        try:
-            cards = Card.where(name=" ".join(args)).all()
-        except:
-            await self.message(mobj.channel, "Something broke when requesting cards.")
-            return None
-        
-        cards_ = dict()
-        entered = []
-        a = 0
-        for cur in cards:
-            if cur.name not in entered:
-                cards_[a] = cur
-                a += 1
-                entered.append(cur.name)
-                if len(entered) > 15: break
-        if len(cards_) == 0:
-            await self.message(mobj.channel, "No cards found.")
-            return None
-        if len(cards_) > 1:
-            message = "```What card would you like:\n"
-            for anime in cards_.items():
-          
-                message += "[{}] {}\n".format(str(anime[0]+1), anime[1].name)
-            
-            message += "\nUse the number to the side of the name as a key to select it!```"
-
-            
-            await self.message(mobj.channel, message)
-
-            msg = await self.client.wait_for_message(timeout=10.0, author=author)
-            
-            if not msg: return None
-            
-            key = int(msg.content)-1
-        else:
-            key = 0
-            
-        try:
-            return cards_[key]
-        except (ValueError, KeyError):
-            await self.message(mobj.channel, "Invalid key.")
-            return None
-        
-    @ChatBot.action('[Card Name]')
-    async def card(self, args, mobj):
-    
-        """
-        Does a search for requested magic card.
-        If there are multiple cards with similar name, will prompt to select one.
-        Displays only the picture of the card. For full information use !cardfull
-        """
-        
-        card = await self.get_card(args, mobj)
-        if not card: return
-        
-        embd = Embed(
-            title=card.name,
-            colour=Color(0x7289da),
-            url=f"http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid={card.multiverse_id}"
-        )
-        last_set = card.printings[-1]
-        latest_picture = Card.where(name=card.name, set=last_set).all()[0]
-        embd.set_image(url=latest_picture.image_url)
-        
-        return await self.embed(mobj.channel, embd)
-
-        
-    @ChatBot.action('[Card Name]')
-    async def cardfull(self, args, mobj):
-    
-        """
-        Does a search for requested magic card.
-        If there are multiple cards with similar name, will prompt to select one.
-        Displays all the information about the card. For only the card image, use !card
-        """
-        card = await self.get_card(args, mobj)
-        if not card: return
-        
-        if not len(self.emojis):
-            for cur in self.client.get_all_emojis():
-                self.emojis[cur.name] = cur
-            
-        mana_dict = {"{B}":self.emojis['BlackMana'], "{U}":self.emojis['BlueMana'], "{W}":self.emojis['WhiteMana'], "{R}":self.emojis['RedMana'], "{G}":self.emojis['GreenMana'], "{X}":self.emojis['XMana'], "{U/P}":self.emojis['PhyBlue'],"{B/P}":self.emojis['PhyBlack'],"{G/P}":self.emojis['PhyGreen'],"{W/P}":self.emojis['PhyWhite'],"{R/P}":self.emojis['PhyRed'],
-                    "{1}":self.emojis["1Mana"],"{2}":self.emojis["2Mana"],"{3}":self.emojis["3Mana"],"{4}":self.emojis["4Mana"],"{5}":self.emojis["5Mana"],"{6}":self.emojis["6Mana"],"{7}":self.emojis["7Mana"],"{8}":self.emojis["8Mana"],"{9}":self.emojis["9Mana"],"{10}":self.emojis["10Mana"],"{15}":self.emojis["15Mana"],"{C}":self.emojis["CMana"],"{0}":self.emojis["0Mana"],"{12}":self.emojis["12Mana"],"{13}":self.emojis["13Mana"],"{11}":self.emojis["11Mana"],
-                    "{T}":self.emojis['Tap'],
-        
-        
-        }
-        
-        def replace_symbols(input):
-            for cur in mana_dict:
-                if cur in input:
-                    input = input.replace(cur, str(mana_dict[cur]))
-            return input
-        
-        embd = Embed(
-            title=card.name,
-            colour=Color(0x7289da),
-            url=f"http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid={card.multiverse_id}"
-        )
-        if card.colors:
-            embd.add_field(name="Color", value=f'{", ".join(card.colors)}')
-        else:
-            embd.add_field(name="Color", value=f'Colorless')
-        if card.mana_cost:
-            mana_costs = replace_symbols(card.mana_cost)
-            #mana_costs = card.mana_cost.replace("{", "").replace("}", " ").strip().split(" ")
-            #mana_costs = " ".join([str(mana_dict[cur]) if cur in mana_dict else cur for cur in mana_costs])
-        
-            embd.add_field(name="Mana Cost", value=mana_costs)
-            embd.add_field(name="CMC", value=card.cmc)
-        last_set = card.printings[-1]
-        embd.add_field(name="Last Printing", value=last_set)
-        if len(card.printings) > 1:
-            embd.add_field(name="Other Printings", value=f"{', '.join([x for x in card.printings if x != last_set])}")
-        
-
-        legalities = {x["format"]:f'{x["format"]}: {x["legality"]}' for x in card.legalities if x['legality'] == 'Banned' or x['legality'] == 'Restricted'}
-        for format in ["Standard", "Modern", "Legacy", "Vintage"]:
-            if format in [x["format"] for x in card.legalities]:
-                legalities[format] = [f'{q["format"]}: {q["legality"]}' for q in card.legalities if q["format"] == format][0]
-        embd.add_field(name="Legality", value='\n'.join(legalities.values()))
-        embd.add_field(name="Type", value=card.type)
-        if card.supertypes:
-            embd.add_field(name="Supertypes", value=f"{', '.join(card.supertypes)}")
-        if card.subtypes:
-            embd.add_field(name="Subtypes", value=f"{', '.join(card.subtypes)}")
-        if 'creature' in card.type:
-            embd.add_field(name="Power/Toughness", value=f"{card.power}/{card.toughness}")
-        if 'planeswalker' in card.type:
-            embd.add_field(name="Loyalty", value=card.loyalty)
-        if card.text:
-            text = replace_symbols(card.text)
-            embd.add_field(name="Card Text", value=text)
-        latest_picture = Card.where(name=card.name, set=last_set).all()[0]
-        embd.set_image(url=latest_picture.image_url)
-        
-        return await self.embed(mobj.channel, embd)
         
     @ChatBot.action('<Command>')
     async def help(self, args, mobj):
@@ -397,179 +137,7 @@ class ArseniosBot(ChatBot):
 
     
         
-    @ChatBot.action()
-    async def coin(self, args, mobj):
-        """
-        Do a coin flip
-        Example: !coin
-        """
-        return await self.message(mobj.channel, choice([":monkey:", ":peach:"]))
-        
-    @ChatBot.action("<String>")
-    async def will(self, args, mobj):
-        """
-        Asks the magic 8-bot a question, and recieve a response
-        """
-        if not args: return await self.message(mobj.channel, "Question is hazy, please try again.")
-        
-        return await self.message(mobj.channel, choice(self.eightball))
 
-
-    @ChatBot.action('[Number]|[Number d Number]')
-    async def roll(self, args, mobj):
-        """
-        1) Make a roll between [1..1000]
-        Example: !roll 100
-        2) Roll XdY [max 100 dice, max 1000 sides. If you choose too large options then it might not print the result.]
-        Example: !roll 3d6
-        """
-        if not args or len(args) > 1:
-            return await self.message(mobj.channel, "Invalid arg count")
-
-        x, = args
-        if x == "barrel":
-            return await self.message(mobj.channel, "https://www.youtube.com/watch?v=mv5qzMtLE60")
-        if 'd' in x:
-            dice, sides = x.split("d")
-            ans = []
-            if not dice.isnumeric() or not sides.isnumeric():
-                return await self.message(mobj.channel, "Non-numeric args given.")
-            if int(dice) > 100 or int(dice) < 1 or int(sides) > 1000 or int(sides) < 1:
-                return await self.message(mobj.channel, "Invalid Argument Range")
-            for i in range(int(dice)):
-                ans.append(randint(1, int(sides)))
-            summation = sum(ans)
-            res = "+".join(["".join(self.emojis[x] for x in str(y).zfill(len(str(y)))) for y in ans]) + "=" + "".join([self.emojis[x] for x in str(summation).zfill(len(str(summation)))])
-        else:
-            if not x.isnumeric():
-                return await self.message(mobj.channel, "Non-numeric arg given")
-
-            num = int(x) # bad 
-            if num < 1 or num > 1000:
-                return await self.message(mobj.channel, "Invalid range given")
-
-            res = [self.emojis[x] for x in str(randint(1, num)).zfill(len(x))]
-        return await self.message(mobj.channel, "".join(res))
-
-    @ChatBot.action('[Search terms]')
-    async def yt(self, args, mobj):
-        """
-        Get the first Youtube search result video
-        Example: !yt how do I take a screenshot
-        """
-        if not args:
-            return await self.message(mobj.channel, "Empty search terms")
-        
-        tube = "https://www.youtube.com"
-        resp = get(f"{tube}/results?search_query={self.replace(' '.join(args))}")
-        if resp.status_code != 200:
-            return await self.message(mobj.channel, "Failed to retrieve search")
-
-        # Build a BS parser and find all Youtube links on the page
-        bs = BS(resp.text, "html.parser")
-        main_d = bs.find('div', id='results')
-        if not main_d:
-            return await self.message(mobj.channel, 'Failed to find results')
-
-        items = main_d.find_all("div", class_="yt-lockup-content")
-        if not items:
-            return await self.message(mobj.channel, "No videos found")
-
-        # Loop until we find a valid non-advertisement link
-        for container in items:
-            href = container.find('a', class_='yt-uix-sessionlink')['href']
-            if href.startswith('/watch'):
-                return await self.message(mobj.channel, f'{tube}{href}')        
-        return await self.message(mobj.channel, "No YouTube video found")
-        
-        
-    @ChatBot.action('[Search terms]')
-    async def nyaa(self, args, mobj):
-        """
-        Get the first nyaa search result where there are seeders
-        Example: !nyaa horriblesubs boruto 01
-        """
-        if not args:
-            return await self.message(mobj.channel, "Empty search terms")
-        
-        tube = "https://www.nyaa.si"
-        resp = get(f"{tube}/?q={self.replace(' '.join(args))}&f=0&c=1_2&s=id&o=desc")
-        if resp.status_code != 200:
-            return await self.message(mobj.channel, "Failed to retrieve search")
-
-        # Build a BS parser and find all Nyaa links on the page
-        bs = BS(resp.text, "html.parser")
-        main_d = bs.find('tbody')
-        if not main_d:
-            return await self.message(mobj.channel, 'Failed to find results')
-
-        items = main_d.find_all("tr", {'class':['danger', 'success', 'default']})
-        if not items:
-            return await self.message(mobj.channel, "Failed to find results")
-
-        # Loop until we find a valid non-advertisement link
-        for find_horrible in [True, False]:
-            for container in items:
-                hrefs = container.find_all('a')
-                locator = 0
-                for i,current in enumerate(hrefs[1:]):
-                    if "title" in current.attrs and 'comments' in current['href']:
-                        continue
-                    locator = i
-                    break
-                link = f"{tube}{hrefs[1+locator]['href']}"
-                the_title = f"{hrefs[1+locator]['title']}"
-                if find_horrible:
-                    if "HorribleSubs" not in the_title: continue
-                seeds = int(container.find("td", style="color: green;").text)
-                if not seeds: continue
-                leechers = int(container.find("td", style="color: red;").text)
-                date=container.find("td", attrs={"data-timestamp":True}).text
-                if "magnet" in hrefs[2+locator]['href']:
-                    magnet = hrefs[2+locator]['href']
-                    torrent= None
-                else:
-                    torrent = f"https://nyaa.si/{hrefs[2+locator]['href']}"
-                    magnet = hrefs[3+locator]['href']
-                embd = Embed(
-                    title=the_title,
-                    color=Color(0x7289da),
-                    url=f"{link}",
-                )
-                if torrent:
-                    link_string = f"[Magnet]({magnet}), [Torrent]({torrent})"
-                else:
-                    link_string = f"[Magnet]({magnet})"
-                embd.add_field(name="Links", value=link_string)
-                embd.add_field(name="Status", value=f"{seeds} seeders, {leechers} leechers")
-                embd.add_field(name="Uploaded", value=f"{date}")
-                embd.add_field(name="More Results", value=f"[Search]({tube}/?q={self.replace('%20'.join(args))}&f=0&c=1_2&s=id&o=desc)")
-                return await self.embed(mobj.channel, embd)     
-            
-        return await self.message(mobj.channel, "No Torrents with seeders found")
-        
-    
-    @ChatBot.action('[String]')
-    async def spam(self, args, mobj):
-        """
-        Spam a channel with dumb things
-        Example: !spam :ok_hand:
-        """
-        if not args or len(args) > 10:
-            return await self.message(mobj.channel, "Invalid spam input")
-        y = args * randint(5, 20)
-        return await self.message(mobj.channel, f"{' '.join(y)}")
-
-
-    @ChatBot.action('<Poll Query>')
-    async def poll(self, args, mobj):
-        """
-        Turn a message into a 'poll' with up/down thumbs
-        Example: !poll should polling be a feature?
-        """
-        await self.client.add_reaction(mobj, '👍')
-        await self.client.add_reaction(mobj, '👎')
-        return
     
 
     def get_images(self, name):
