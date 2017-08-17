@@ -88,9 +88,13 @@ class RANDOMBOT():
         Spam a channel with dumb things
         Example: !spam :ok_hand:
         """
-        if not args or len(args) > 10:
+        if not args:
             return await self.message(mobj.channel, "Invalid spam input")
-        y = args * randint(5, 20)
+        argl = len(f"{' '.join(args)}")
+        max_length = 2000 // argl
+        if max_length < 5:
+            return await self.message(mobj.channel, "Invalid spam input")
+        y = args * randint(5, max_length)
         return await self.message(mobj.channel, f"{' '.join(y)}")
 
 
