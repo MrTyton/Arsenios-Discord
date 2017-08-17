@@ -21,8 +21,11 @@ class ArseniosBot(ChatBot):
         
     
     def load_cog(self, extension): 
-        i = importlib.import_module(extension)
-        i.setup(self)
+        try:
+            i = importlib.import_module(extension)
+            i.setup(self)
+        except Exception as e:
+            self.logger(f"Could not load {extension}, broke with error {e}")
         return
         
     def load_extensions(self):
