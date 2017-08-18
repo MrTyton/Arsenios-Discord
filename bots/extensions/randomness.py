@@ -94,7 +94,7 @@ class RANDOMBOT():
         max_length = 2000 // argl
         if max_length < 5:
             return await self.message(mobj.channel, "Invalid spam input")
-        y = args * randint(5, max_length)
+        y = args * randint(5, min(max_length, 20))
         return await self.message(mobj.channel, f"{' '.join(y)}")
 
 
