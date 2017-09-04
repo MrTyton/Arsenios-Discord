@@ -50,7 +50,7 @@ class TOURNAMENTBOT:
     async def add_tournament(self, url, name, chan):
         info = {}
         info['url'] = url
-        info['round'] = 10
+        info['round'] = 1
         info['players'] = set()
         info['title'] = name
         info['channel'] = chan
