@@ -51,7 +51,7 @@ class TOURNAMENTBOT:
         info = {}
         info['url'] = url
         info['round'] = 1
-        info['players'] = set()
+        info['players'] = set(['Sukenik'])
         info['title'] = name
         info['channel'] = chan
         await self.tournament_lock.acquire()
@@ -120,6 +120,9 @@ class TOURNAMENTBOT:
                 parsed_page = self.parse_url(url, cur['players'])
                 if not parsed_page:
                     continue
+                cur['round'] += 1
+                
+                if cur['round'] == 16: removals.append(named_tourny)
                 parsed_players = self.parse_players(parsed_page, cur['round'])
                 
                 if parsed_players == {}:
@@ -135,9 +138,7 @@ class TOURNAMENTBOT:
                     
                 await self.bot.embed(cur['channel'], embed)
                 
-                cur['round'] += 1
                 
-                if cur['round'] == 16: removals.append(named_tourny)
             
             for deletion in removals:
                 del tournaments[deletion]
