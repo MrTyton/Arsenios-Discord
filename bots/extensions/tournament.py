@@ -51,7 +51,7 @@ class TOURNAMENTBOT:
         info = {}
         info['url'] = url
         info['round'] = 1
-        info['players'] = set(['Sukenik'])
+        info['players'] = set()
         info['title'] = name
         info['channel'] = chan
         await self.tournament_lock.acquire()
@@ -120,12 +120,11 @@ class TOURNAMENTBOT:
                 parsed_page = self.parse_url(url, cur['players'])
                 if not parsed_page:
                     continue
-                cur['round'] += 1
-                
-                if cur['round'] == 16: removals.append(named_tourny)
                 parsed_players = self.parse_players(parsed_page, cur['round'])
                 
                 if parsed_players == {}:
+                    cur['round'] += 1
+                    if cur['round'] == 16: removals.append(named_tourny)
                     continue
                     
                 embed = Embed(
@@ -133,12 +132,13 @@ class TOURNAMENTBOT:
                     colour=Color(0x7289da),
                 )
                 
-                for playa, nfo in parsed_players.items():
+                for playa, nfo in sorted(parsed_players.items(), key = lambda x : x[1]['place']):
                     embed.add_field(name=playa, value=f"In {self.ordinalize(nfo['place'])} place with a record of {nfo['record']}", inline=False)
                     
                 await self.bot.embed(cur['channel'], embed)
                 
-                
+                cur['round'] += 1                
+                if cur['round'] == 16: removals.append(named_tourny)
             
             for deletion in removals:
                 del tournaments[deletion]
@@ -177,7 +177,7 @@ class TOURNAMENTBOT:
         for cur in players:
             player_dict = {}
             fields = cur.find_all('td')
-            player_dict['place'] = fields[0].get_text()
+            player_dict['place'] = int(fields[0].get_text())
             player_dict['points'] = int(fields[2].get_text())
             player_dict['record'] = self.calculate_score(player_dict['points'], current_round)
             ans_dict[fields[1].get_text()] = player_dict
