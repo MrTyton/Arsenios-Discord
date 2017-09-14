@@ -43,7 +43,6 @@ class TOURNAMENTBOT:
         return tournament
 
     async def save_tournaments(self, tournaments):
-        print(tournaments)
         with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.tournaments'), 'wb')  as fp:
             dump(tournaments, fp)
         
@@ -51,7 +50,7 @@ class TOURNAMENTBOT:
         info = {}
         info['url'] = url
         info['round'] = 1
-        info['players'] = set()
+        info['players'] = set(['Sukenik'])
         info['title'] = name
         info['channel'] = chan
         await self.tournament_lock.acquire()

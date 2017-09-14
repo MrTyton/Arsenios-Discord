@@ -9,6 +9,7 @@ class CARDBOT:
         self.bot = bot
         self.bot.get_card = self.get_card #there has to be a better way to do this
         self.bot.magic_emojis = {}
+        self.bot.card_get_image = self.card_get_image
     
     
     async def get_card(self, args, mobj):
@@ -27,7 +28,7 @@ class CARDBOT:
                 cards_[a] = cur
                 a += 1
                 entered.append(cur.name)
-                if len(entered) > 15: break
+                if len(entered) >= 15: break
         if len(cards_) == 0:
             await self.bot.message(mobj.channel, "No cards found.")
             return None
@@ -74,12 +75,16 @@ class CARDBOT:
             url=f"http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid={card.multiverse_id}"
         )
         last_set = card.printings[-1]
-        latest_picture = Card.where(name=card.name, set=last_set).all()[0]
+        latest_picture = self.card_get_image(card, last_set)
         embd.set_image(url=latest_picture.image_url)
         
         return await self.embed(mobj.channel, embd)
 
-        
+    def card_get_image(self, card, set):
+        iterator = Card.where(name=card.name, set=set).iter()
+        for i in iterator:
+            return i
+    
     @ChatBot.action('[Card Name]')
     async def cardfull(self, args, mobj):
     
@@ -147,7 +152,7 @@ class CARDBOT:
         if card.text:
             text = replace_symbols(card.text)
             embd.add_field(name="Card Text", value=text)
-        latest_picture = Card.where(name=card.name, set=last_set).all()[0]
+        latest_picture = self.card_get_image(card, last_set)
         embd.set_image(url=latest_picture.image_url)
         
         return await self.embed(mobj.channel, embd)
