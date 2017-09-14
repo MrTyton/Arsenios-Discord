@@ -14,7 +14,7 @@ class CARDBOT:
     async def get_card(self, args, mobj):
         author = mobj.author
         try:
-            cards = Card.where(name=" ".join(args)).all()
+            cards = Card.where(name=" ".join(args)).iter()
         except:
             await self.bot.message(mobj.channel, "Something broke when requesting cards.")
             return None
