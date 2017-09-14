@@ -25,7 +25,7 @@ class ArseniosBot(ChatBot):
             i = importlib.import_module(extension)
             i.setup(self)
         except Exception as e:
-            self.logger(f"Could not load {extension}, broke with error {e}")
+            self.logger(f'Could not load {extension}, broke with error "{e}"')
         return
         
     def load_extensions(self):
