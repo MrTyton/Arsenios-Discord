@@ -154,8 +154,20 @@ class CARDBOT:
             embd.add_field(name="Card Text", value=text)
         latest_picture = self.card_get_image(card, last_set)
         embd.set_image(url=latest_picture.image_url)
-        
-        return await self.embed(mobj.channel, embd)
+        try:
+            await self.embed(mobj.channel, embd)
+        except:
+            await self.message(mobj.channel, "Something went wrong when getting all of the information. Here's the image instead.")
+            embd = Embed(
+                title=card.name,
+                colour=Color(0x7289da),
+                url=f"http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid={card.multiverse_id}"
+                )
+            last_set = card.printings[-1]
+            latest_picture = self.card_get_image(card, last_set)
+            embd.set_image(url=latest_picture.image_url)
+            
+            return await self.embed(mobj.channel, embd) 
         
 def setup(bot):
     CARDBOT(bot)
