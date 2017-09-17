@@ -125,6 +125,7 @@ class TOURNAMENTBOT:
                 if parsed_page == []:
                     cur['round'] += 1
                     if cur['round'] == 16: removals.append(named_tourny)
+                    continue
                 elif parsed_page == None:
                     continue
                 parsed_players = self.parse_players(parsed_page, cur['round'])
