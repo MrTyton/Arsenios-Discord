@@ -55,33 +55,36 @@ class TOURNAMENTBOT:
         info['channel'] = chan
         await self.tournament_lock.acquire()
         tournaments = await self.load_tournaments()
-        namestring = f"name {chan.id}"
+        namestring = f"{name} {chan.id}"
         if namestring in tournaments:
             self.tournament_lock.release()
             raise ValueError("Tournament name is already taken in this channel")
-        tournaments[f"name {chan.id}"] = info
+        tournaments[f"{name} {chan.id}"] = info
         await self.save_tournaments(tournaments)
         self.tournament_lock.release()
         
-    async def add_player(self, title, name):
+    async def add_player(self, chan, title, name):
         await self.tournament_lock.acquire()
         tournaments = await self.load_tournaments()
-        if title not in tournaments:
+        if f"{title} {chan.id}" not in tournaments:
             self.tournament_lock.release()
             raise ValueError("Tournament ID is not being tracked")
-        tournaments[title]['players'].add(name)
+        tournaments[f"{title} {chan.id}"]['players'].add(name)
         await self.save_tournaments(tournaments)
         self.tournament_lock.release()
         
     @ChatBot.action('[Tournament Base URL] [Name]')
     async def tournament(self, args, mobj):
         """
-        Starts tracking a tournament. Base url is of the form
-            http://magic.wizards.com/en/events/coverage/[CHANGETHISPART]/
-        SCG still work in progress.
+        Starts tracking a tournament. Base url is of the form (event page links)
+            Wizards of the Coast:
+                http://magic.wizards.com/en/events/coverage/[CHANGETHISPART]/
+            Starcity Games (only for main event):
+                http://www.starcitygames.com/events/[CHANGETHISPARTHERE].html
         Name is one word.
         Exampe:
             !tournament http://magic.wizards.com/en/events/coverage/gpdc/ GPDC
+            !tournament http://www.starcitygames.com/events/160917_louisville.html SCG_Louisville
         """
         try:
             await self.add_tournament(args[0], args[1], mobj.channel)
@@ -96,7 +99,7 @@ class TOURNAMENTBOT:
             !track GPDC Sukenik
         """
         try:
-            await self.add_player(args[0], f"{' '.join(args[1:]).strip()}")
+            await self.add_player(mobj.channel, args[0], f"{' '.join(args[1:]).strip()}")
         except Exception as e:
             return await self.message(mobj.channel, f"{e}")
         return await self.message(mobj.channel, "Player is now being tracked.")
@@ -116,6 +119,8 @@ class TOURNAMENTBOT:
             for named_tourny in tournaments:
                 cur = tournaments[named_tourny]
                 url = self.generate_url(cur['url'], cur['round'])
+                if not url:
+                    continue
                 parsed_page = self.parse_url(url, cur['players'])
                 if not parsed_page:
                     continue
@@ -182,12 +187,21 @@ class TOURNAMENTBOT:
             ans_dict[fields[1].get_text()] = player_dict
         return ans_dict
         
-    def generate_url(self, base, current_round):
+    def generate_url(self, base, current_round): #should modify this to take into account that there are classics. This right now should only get the first tournament.
         if "wizards" in base:
             d = date.today()
             url = f"http://magic.wizards.com/en/events/coverage/gpdc/round-{current_round}-standings-{d.strftime('%Y-%m-%d')}"
         if "starcity" in base:
-            pass #have to figure out the formatting
+            resp = get(base)
+            if resp.status_code != 200:
+                return None
+            bs = BS(resp.text, 'html.parser')
+            table = bs.find('table', {"class":"standings_table"})
+            rows = table.find_all('tr')
+            url = [x.find_all('td')[2].find('a')['href'] for x in rows if x.find_all('td')[2].text == str(current_round)]
+            if url == []:
+                return None
+            url = url[0]
         return url
 
         

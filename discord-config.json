@@ -2,8 +2,8 @@
     "sleep_time": 600,
     "sleep_count": 12,
     "hard_restarts": true,
-    "init_sleep": 30,
-    "reset_sleep": 30,
+    "init_sleep": 5,
+    "reset_sleep": 5,
     "programs": [
         {
             "name": "Arsenios",
