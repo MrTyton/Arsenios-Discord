@@ -1,4 +1,4 @@
-from Bot import ChatBot, Bot
+from Bot import ChatBot
 from discord import Embed, Color
 from requests import get
 from bs4 import BeautifulSoup as BS

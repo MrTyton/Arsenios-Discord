@@ -1,9 +1,9 @@
-from Bot import ChatBot, Bot
+from Bot import ChatBot
 import pickle
-from asyncio import Lock, sleep
+from asyncio import Lock
 from discord import Embed, Color
 from random import choice
-from os.path import isfile, join
+from os.path import isfile
 from pathlib import Path
 
 class QUOTEBOT:

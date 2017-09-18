@@ -1,8 +1,7 @@
   
 from random import randint, choice
-from Bot import ChatBot, Bot
-from discord import Embed, Color
-from os.path import isfile, join
+from Bot import ChatBot
+from os.path import isfile
 from pathlib import Path
   
 class RANDOMBOT():

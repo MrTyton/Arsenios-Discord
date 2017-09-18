@@ -1,6 +1,5 @@
-from Bot import ChatBot, Bot
+from Bot import ChatBot
 from random import choice
-from os.path import isfile, join
 from os.path import isfile, join
 from pathlib import Path
 from os import listdir

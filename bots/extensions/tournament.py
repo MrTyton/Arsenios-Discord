@@ -1,4 +1,4 @@
-from Bot import ChatBot, Bot
+from Bot import ChatBot
 from discord import Embed, Color
 from requests import get
 from bs4 import BeautifulSoup as BS
@@ -11,7 +11,7 @@ import inflect
 from asyncio import ensure_future, sleep, Lock
 
 from pathlib import Path
-from os.path import isfile, join
+from os.path import isfile
 
 class TOURNAMENTBOT:
 
@@ -50,7 +50,7 @@ class TOURNAMENTBOT:
         info = {}
         info['url'] = url
         info['round'] = 1
-        info['players'] = set()
+        info['players'] = set([])
         info['title'] = name
         info['channel'] = chan
         await self.tournament_lock.acquire()

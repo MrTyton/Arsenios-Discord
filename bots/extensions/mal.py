@@ -1,6 +1,6 @@
 
 from pyanimelist import PyAnimeList
-from Bot import ChatBot, Bot
+from Bot import ChatBot
 from discord import Embed, Color
 from json import load as jload
 from pathlib import Path

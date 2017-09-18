@@ -2,10 +2,9 @@
 #-*- coding: utf-8 -*-
 
 import importlib
-from Bot import ChatBot, Bot
-from discord import Embed, Color
+from Bot import ChatBot
 from pathlib import Path
-from os.path import isfile, join
+from os.path import isfile
 
 class ArseniosBot(ChatBot):
     """
