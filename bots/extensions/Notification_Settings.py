@@ -14,6 +14,7 @@ class NOTIFYBOT:
         self.bot = bot
 
         self.bot.notifications = self.load_notifications()
+        self.bot.save_notifications = self.save_notifications
         self.bot.notification_lock = Lock()
         self.bot.sleepers = set()
         self.bot.sleepers_lock = Lock()

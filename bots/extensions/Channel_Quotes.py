@@ -52,14 +52,13 @@ class QUOTEBOT:
         if len(args) == 0:
             if len(self.quotes) == 0:
                 return await self.message(mobj.channel, "No quotes in the database")
-            option = choice(list(self.quotes.keys()))
             embd = Embed(
-                title=option,
+                title="List of Options",
                 colour=Color(0x7289da)
             )
 
-            value = self.quotes[option]
-            embd.add_field(name=f"{value[0]}", value=f"{value[1]}")
+            value = "\n".join(self.quotes.keys())
+            embd.add_field(name=f"List", value=value)
             return await self.embed(mobj.channel, embd)
         elif args[0].lower() == "add" and len(args) > 2:
             key = args[1].lower()
