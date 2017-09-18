@@ -5,6 +5,7 @@ import importlib
 from Bot import ChatBot
 from pathlib import Path
 from os.path import isfile
+from itertools import groupby
 
 
 class ArseniosBot(ChatBot):
@@ -64,8 +65,12 @@ class ArseniosBot(ChatBot):
         output = 'Thank you for choosing Arsenios™ for your channel\nIf you have any bug reports, please tell @MrTyton#5093\nIf you want to peek under the hood, go to https://github.com/MrTyton/Arsenios-Discord\n\n'
         output += 'Here are the available commands\n'
         output += '<> means that the input is optional, [] means that the input is required\n\n'
-        for c in [f'{k}' for k in self.ACTIONS.keys()]:
-            output += f'* {c} {self.HELPMSGS.get(c, "")}\n'
+        for k, g in groupby(self.ACTIONS.keys(),
+                            key=lambda x: self.ACTIONS[x].__module__):
+            output += f'{k}:\n'.replace("extensions.", "").replace("__", "")
+            for cur in g:
+                c = f'{cur}'
+                output += f'\t* {c} {self.HELPMSGS.get(c, "")}\n'
         output += f'\nFor more info on each command, use \'{ChatBot.PREFIX}help command\''
         return await self.message(mobj.channel, self.pre_text(output))
 
