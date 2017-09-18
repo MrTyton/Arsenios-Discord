@@ -1,16 +1,16 @@
-  
+
 from random import randint, choice
 from Bot import ChatBot
 from os.path import isfile
 from pathlib import Path
-  
+
+
 class RANDOMBOT():
 
     def __init__(self, bot):
         self.bot = bot
         self.bot.eightball = self.load_eightball()
-    
-    
+
     def load_eightball(self):
         """
         Load Magic 8-ball answers
@@ -22,8 +22,8 @@ class RANDOMBOT():
             self.bot.logger("There is no 8ball file, creating.")
             with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.8ball'), 'w') as fp:
                 fp.write("I have no idea, I'm not psychic.")
-            return ["I have no idea, I'm not psychic."]    
-        
+            return ["I have no idea, I'm not psychic."]
+
     @ChatBot.action()
     async def coin(self, args, mobj):
         """
@@ -31,16 +31,16 @@ class RANDOMBOT():
         Example: !coin
         """
         return await self.message(mobj.channel, choice([":monkey:", ":peach:"]))
-        
+
     @ChatBot.action("<String>")
     async def will(self, args, mobj):
         """
         Asks the magic 8-bot a question, and recieve a response
         """
-        if not args: return await self.message(mobj.channel, "Question is hazy, please try again.")
-        
-        return await self.message(mobj.channel, choice(self.eightball))
+        if not args:
+            return await self.message(mobj.channel, "Question is hazy, please try again.")
 
+        return await self.message(mobj.channel, choice(self.eightball))
 
     @ChatBot.action('[Number]|[Number d Number]')
     async def roll(self, args, mobj):
@@ -61,26 +61,25 @@ class RANDOMBOT():
             ans = []
             if not dice.isnumeric() or not sides.isnumeric():
                 return await self.message(mobj.channel, "Non-numeric args given.")
-            if int(dice) > 100 or int(dice) < 1 or int(sides) > 1000 or int(sides) < 1:
+            if int(dice) > 100 or int(dice) < 1 or
+                    int(sides) > 1000 or int(sides) < 1:
                 return await self.message(mobj.channel, "Invalid Argument Range")
             for i in range(int(dice)):
                 ans.append(randint(1, int(sides)))
             summation = sum(ans)
-            res = "+".join(["".join(self.emojis[x] for x in str(y).zfill(len(str(y)))) for y in ans]) + "=" + "".join([self.emojis[x] for x in str(summation).zfill(len(str(summation)))])
+            res = "+".join(["".join(self.emojis[x] for x in str(y).zfill(len(str(y)))) for y in ans]) + \
+                "=" + "".join([self.emojis[x] for x in str(summation).zfill(len(str(summation)))])
         else:
             if not x.isnumeric():
                 return await self.message(mobj.channel, "Non-numeric arg given")
 
-            num = int(x) # bad 
+            num = int(x)  # bad
             if num < 1 or num > 1000:
                 return await self.message(mobj.channel, "Invalid range given")
 
             res = [self.emojis[x] for x in str(randint(1, num)).zfill(len(x))]
         return await self.message(mobj.channel, "".join(res))
 
-
-        
-    
     @ChatBot.action('[String]')
     async def spam(self, args, mobj):
         """
@@ -96,7 +95,6 @@ class RANDOMBOT():
         y = args * randint(5, min(max_length, 20))
         return await self.message(mobj.channel, f"{' '.join(y)}")
 
-
     @ChatBot.action('<Poll Query>')
     async def poll(self, args, mobj):
         """
@@ -106,6 +104,7 @@ class RANDOMBOT():
         await self.client.add_reaction(mobj, 'ðŸ‘')
         await self.client.add_reaction(mobj, 'ðŸ‘Ž')
         return
-        
+
+
 def setup(bot):
     RANDOMBOT(bot)

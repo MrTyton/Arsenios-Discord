@@ -13,6 +13,7 @@ from asyncio import ensure_future, sleep, Lock
 from pathlib import Path
 from os.path import isfile
 
+
 class TOURNAMENTBOT:
 
     def __init__(self, bot):
@@ -22,30 +23,28 @@ class TOURNAMENTBOT:
         self.ordinalize = inflect.engine().ordinal
         self.tournament_lock = Lock()
         ensure_future(self.check())
-        
-
 
     async def load_tournaments(self):
         """
         Loads tournaments from data folder
         """
-        
+
         if isfile(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.tournaments')):
-            with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.tournaments'), 'rb')  as fp:
+            with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.tournaments'), 'rb') as fp:
                 tournament = load(fp)
                 if not tournament:
                     tournamnet = {}
         else:
             self.bot.logger("There is no tournament file, creating.")
-            with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.tournaments'), 'wb')  as fp:
+            with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.tournaments'), 'wb') as fp:
                 tournament = {}
                 dump(tournament, fp)
         return tournament
 
     async def save_tournaments(self, tournaments):
-        with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.tournaments'), 'wb')  as fp:
+        with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.tournaments'), 'wb') as fp:
             dump(tournaments, fp)
-        
+
     async def add_tournament(self, url, name, chan):
         info = {}
         info['url'] = url
@@ -58,11 +57,12 @@ class TOURNAMENTBOT:
         namestring = f"{name} {chan.id}"
         if namestring in tournaments:
             self.tournament_lock.release()
-            raise ValueError("Tournament name is already taken in this channel")
+            raise ValueError(
+                "Tournament name is already taken in this channel")
         tournaments[f"{name} {chan.id}"] = info
         await self.save_tournaments(tournaments)
         self.tournament_lock.release()
-        
+
     async def add_player(self, chan, title, name):
         await self.tournament_lock.acquire()
         tournaments = await self.load_tournaments()
@@ -72,7 +72,7 @@ class TOURNAMENTBOT:
         tournaments[f"{title} {chan.id}"]['players'].add(name)
         await self.save_tournaments(tournaments)
         self.tournament_lock.release()
-        
+
     @ChatBot.action('[Tournament Base URL] [Name]')
     async def tournament(self, args, mobj):
         """
@@ -90,7 +90,7 @@ class TOURNAMENTBOT:
             await self.add_tournament(args[0], args[1], mobj.channel)
         except Exception as e:
             return await self.message(mobj.channel, f"{e}")
-        
+
     @ChatBot.action('[Tournament Name] [Player]')
     async def track(self, args, mobj):
         """
@@ -103,10 +103,7 @@ class TOURNAMENTBOT:
         except Exception as e:
             return await self.message(mobj.channel, f"{e}")
         return await self.message(mobj.channel, "Player is now being tracked.")
-    
 
-            
-        
     async def check(self):
         """
         Sleeper thread. Checks every 5 minutes for tournament updates and then posts them to the respective channels.
@@ -114,7 +111,7 @@ class TOURNAMENTBOT:
         await sleep(5)
         while(True):
             await self.tournament_lock.acquire()
-            tournaments = await self.load_tournaments()   
+            tournaments = await self.load_tournaments()
             removals = []
             for named_tourny in tournaments:
                 cur = tournaments[named_tourny]
@@ -124,44 +121,49 @@ class TOURNAMENTBOT:
                 parsed_page = self.parse_url(url, cur['players'])
                 if parsed_page == []:
                     cur['round'] += 1
-                    if cur['round'] == 16: removals.append(named_tourny)
+                    if cur['round'] == 16:
+                        removals.append(named_tourny)
                     continue
-                elif parsed_page == None:
+                elif parsed_page is None:
                     continue
                 parsed_players = self.parse_players(parsed_page, cur['round'])
-                
+
                 if parsed_players == {}:
                     cur['round'] += 1
-                    if cur['round'] == 16: removals.append(named_tourny)
+                    if cur['round'] == 16:
+                        removals.append(named_tourny)
                     continue
-                    
+
                 embed = Embed(
                     title=f"{cur['title']} Round {cur['round']}",
                     colour=Color(0x7289da),
                 )
-                
-                for playa, nfo in sorted(parsed_players.items(), key = lambda x : x[1]['place']):
-                    embed.add_field(name=playa, value=f"In {self.ordinalize(nfo['place'])} place with a record of {nfo['record']}", inline=False)
-                    
+
+                for playa, nfo in sorted(
+                        parsed_players.items(), key=lambda x: x[1]['place']):
+                    embed.add_field(
+                        name=playa,
+                        value=f"In {self.ordinalize(nfo['place'])} place with a record of {nfo['record']}",
+                        inline=False)
+
                 await self.bot.embed(cur['channel'], embed)
-                
-                cur['round'] += 1                
-                if cur['round'] == 16: removals.append(named_tourny)
-            
+
+                cur['round'] += 1
+                if cur['round'] == 16:
+                    removals.append(named_tourny)
+
             for deletion in removals:
                 del tournaments[deletion]
-            
+
             await self.save_tournaments(tournaments)
             self.tournament_lock.release()
-            
+
             await sleep(300)
-                
-    
-        
+
     def parse_url(self, url, player_list):
         """
         Parses the provided url to get the player objects.
-        """        
+        """
         resp = get(url)
         if resp.status_code != 200:
             return None
@@ -169,17 +171,17 @@ class TOURNAMENTBOT:
         tags = bs.find_all('tr')
         players = [x for x in tags if any([y in x.text for y in player_list])]
         return players
-        
+
     def calculate_score(self, score, round):
         """
         Calculates the record of the player. Assumations are that a player will not have more than 2 draws, as having 3 draws is the same as having 2 losses.
-        """        
+        """
         score = int(score)
         max_wins = score // 3
         max_draws = score - (max_wins * 3)
         max_losses = round - max_wins - max_draws
         return f"{max_wins}-{max_losses}-{max_draws}"
-        
+
     def parse_players(self, players, current_round):
         ans_dict = {}
         for cur in players:
@@ -187,11 +189,14 @@ class TOURNAMENTBOT:
             fields = cur.find_all('td')
             player_dict['place'] = int(fields[0].get_text())
             player_dict['points'] = int(fields[2].get_text())
-            player_dict['record'] = self.calculate_score(player_dict['points'], current_round)
+            player_dict['record'] = self.calculate_score(
+                player_dict['points'], current_round)
             ans_dict[fields[1].get_text()] = player_dict
         return ans_dict
-        
-    def generate_url(self, base, current_round): #should modify this to take into account that there are classics. This right now should only get the first tournament.
+
+    # should modify this to take into account that there are classics. This
+    # right now should only get the first tournament.
+    def generate_url(self, base, current_round):
         if "wizards" in base:
             d = date.today()
             url = f"http://magic.wizards.com/en/events/coverage/gpdc/round-{current_round}-standings-{d.strftime('%Y-%m-%d')}"
@@ -200,14 +205,15 @@ class TOURNAMENTBOT:
             if resp.status_code != 200:
                 return None
             bs = BS(resp.text, 'html.parser')
-            table = bs.find('table', {"class":"standings_table"})
+            table = bs.find('table', {"class": "standings_table"})
             rows = table.find_all('tr')
-            url = [x.find_all('td')[2].find('a')['href'] for x in rows if x.find_all('td')[2].text == str(current_round)]
+            url = [x.find_all('td')[2].find('a')['href'] for x in rows if x.find_all('td')[
+                2].text == str(current_round)]
             if url == []:
                 return None
             url = url[0]
         return url
 
-        
+
 def setup(bot):
     TOURNAMENTBOT(bot)

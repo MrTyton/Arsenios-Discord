@@ -27,6 +27,7 @@ different scenarios (Webhook is better at automated tasks, while
 Chat is better at replying to user requests (and also voice)).
 """
 
+
 class Bot(object):
     """
     The main Bot class for all bots to inherit from
@@ -45,10 +46,10 @@ class Bot(object):
               "!": "%21", "@": "%40", "#": "%23", "$": "%24", "+": "%2B",
               "*": "%2A", "^": "%5E", "(": "%28", ")": "%29", "=": "%3D",
               "[": "%5B", "]": "%5D", "{": "%7B", "}": "%7D"}
-    
+
     BADWORDS = ('fuck', 'cock', 'shit', 'piss', 'wank', 'kiddy', 'child',
                 'porn', 'masturbate', 'bate', 'anal', 'cum')
-                
+
     # Static methods will come first
     @staticmethod
     def replace(string="", char_map=URLMAP):
@@ -57,7 +58,7 @@ class Bot(object):
         for k, v in char_map.items():
             s.replace(k, v)
         return s
-    
+
     @staticmethod
     def has_badwords(string=""):
         "Determine if a string has a bad word in it"
@@ -80,8 +81,16 @@ class Bot(object):
         Bots will use colors in the range of 16-256 based on their hash modulo
         """
         color = 16 + (hash(bot_name) % 240)
+
         def logger(msg):
-            print(Bot.LOGSTR.format(bot_name, strftime("%H:%M:%S", localtime()), msg, color))
+            print(
+                Bot.LOGSTR.format(
+                    bot_name,
+                    strftime(
+                        "%H:%M:%S",
+                        localtime()),
+                    msg,
+                    color))
             return True
         return logger
 
@@ -93,6 +102,7 @@ class Bot(object):
         """
         Bot._make_folder(Path(Bot.BOT_FOLDER))
         Bot._make_folder(Path(Bot.BOT_FOLDER, bot_name))
+
         def bot_file(filename=None):
             if filename is None or filename == "":
                 return Path(Bot.BOT_FOLDER, bot_name)
@@ -106,14 +116,14 @@ class Bot(object):
             raise IOError
         with open(path, 'r') as f:
             return f.read()
-        return None 
+        return None
 
     @staticmethod
     def pre_text(msg, lang=None):
         "Encapsulate a string in a <pre> container"
         s = "```{}```"
         if lang is not None:
-            s = s.format(format+"\n{}")
+            s = s.format(format + "\n{}")
         return s.format(msg.rstrip().strip("\n").replace("\t", ""))
 
     # Instance methods go below __init__()
@@ -133,18 +143,18 @@ class Bot(object):
                 raise IOError("Key not found in JSON keyfile")
             return key
         return None
-        
-    
+
+
 class ChatBot(Bot):
     """
     The ChatBot is a wrapper for the Discord client itself
     Any bots that take user input from a channel will inherit this
-    
+
     In order to create a Discord Client, a bot has to have an authorized
     token associated with it. The keys are read from files (no trailing newlines)
-    inside of a local "keys" folder. The "keys" folder is at the root of the 
+    inside of a local "keys" folder. The "keys" folder is at the root of the
     project, not inside the Bot Data folder
-    
+
     NOTE: when instancing, don't create more than one instance at a time
     """
     PREFIX = "!"
@@ -174,7 +184,7 @@ class ChatBot(Bot):
                     return True
             return function
         return regfunc
-    
+
     @staticmethod
     def reg_function(function, help_msg=""):
         """
@@ -186,8 +196,7 @@ class ChatBot(Bot):
                 ChatBot.ACTIONS[fname] = function
                 ChatBot.HELPMSGS[fname] = help_msg.strip()
                 return True
-        
-    
+
     @staticmethod
     def get_emojis(msg_obj):
         "Fetch emojis from a Message object"
@@ -205,11 +214,11 @@ class ChatBot(Bot):
     async def message(self, channel, string):
         """
         Shorthand version of client.send_message
-        So that we don't have to arbitrarily type 
+        So that we don't have to arbitrarily type
         'self.client.send_message' all the time
         """""
         return await self.client.send_message(channel, string)
-        
+
     async def embed(self, channel, embed):
         """
         Shorthand for Embed
@@ -234,9 +243,10 @@ class ChatBot(Bot):
             raise Exception("Wat")
         if len(client.messages) == 1:
             return None
-        c_uid = lambda u, v: True
+
+        def c_uid(u, v): return True
         if uid is not None:
-            c_uid = lambda u, v: u == v
+            def c_uid(u, v): return u == v
         res = [msg for msg in self.client.messages
                if msg.channel == chan
                and msg.author.id != self.client.user.id
@@ -254,7 +264,8 @@ class ChatBot(Bot):
         async def on_ready():
             self.display_no_servers()
             await self.set_status(self.STATUS)
-            return self.logger(f"Connection status: {self.client.is_logged_in}")
+            return self.logger(
+                f"Connection status: {self.client.is_logged_in}")
         return on_ready
 
     def event_error(self):
@@ -268,7 +279,7 @@ class ChatBot(Bot):
         "Change this to change overall on message behavior"
         async def on_message(msg):
             args = msg.content.strip().split(" ")
-            key = args.pop(0).lower() # messages sent can't be empty
+            key = args.pop(0).lower()  # messages sent can't be empty
             if key in self.ACTIONS:
                 return await self.ACTIONS[key](self, args, msg)
             return await self.process_message(msg)
@@ -276,7 +287,7 @@ class ChatBot(Bot):
 
     async def process_message(self, msg):
         return
-        
+
     def setup_events(self):
         """
         Set up all events for the Bot
@@ -315,7 +326,7 @@ class WebHookBot(Bot):
     A WebHookBot is a bot that will automatically execute actions
     based on a timer and will fire messages towards a Discord endpoint
     These are more of "daemons" one can make to automate multitudes of tasks
-    
+
     NOTE: WebHookBots can not receive user input directly from a Discord channel
     Use a ChatBot to take input from a user and write it to a file a WebHookBot
     can access easily (a "shared" folder), or a microservice like a database,
@@ -356,5 +367,5 @@ class WebHookBot(Bot):
         finally:
             self.logger(f"Shutting down {self.name}")
         return quit()
-            
-# end 
+
+# end

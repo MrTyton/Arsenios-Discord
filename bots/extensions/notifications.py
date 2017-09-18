@@ -9,21 +9,24 @@ from datetime import datetime
 
 
 class NOTIFYBOT:
-    
+
     def __init__(self, bot):
         self.bot = bot
-        
+
         self.bot.notifications = self.load_notifications()
         self.bot.notification_lock = Lock()
         self.bot.sleepers = set()
         self.bot.sleepers_lock = Lock()
         self.bot.process_message = self.process_message
-        
+
     def load_notifications(self):
         """
         Loads notification settings from pickle file
         """
-        if isfile(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.notifications')):
+        if isfile(
+            Path(
+                self.bot.DATA_FOLDER,
+                f'{self.bot.name}.notifications')):
             with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.notifications'), 'rb') as fp:
                 notifications = pickle.load(fp)
                 if not notifications:
@@ -33,17 +36,17 @@ class NOTIFYBOT:
             with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.notifications'), 'wb') as fp:
                 notifications = defaultdict(set)
                 pickle.dump(notifications, fp)
-                
+
         return notifications
-            
+
     def save_notifications(self):
         """
         Save notification settings to pickle file.
         """
-        with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.notifications'), 'wb')  as fp:
+        with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.notifications'), 'wb') as fp:
             pickle.dump(self.bot.notifications, fp)
-        return   
-        
+        return
+
     @ChatBot.action('[String]')
     async def notify(self, args, mobj):
         """
@@ -56,7 +59,7 @@ class NOTIFYBOT:
         self.save_notifications()
         self.notification_lock.release()
         return await self.message(mobj.channel, f"You have been added to be notified whenever '{' '.join(args).lower().strip()}' has been said.")
-        
+
     @ChatBot.action('[Time (seconds)]')
     async def sleep(self, args, mobj):
         """
@@ -72,7 +75,7 @@ class NOTIFYBOT:
         self.sleepers.remove(mobj.author)
         self.sleepers_lock.release()
         return
-        
+
     @ChatBot.action('[String]')
     async def remove(self, args, mobj):
         """
@@ -85,14 +88,15 @@ class NOTIFYBOT:
         if resp in self.notifications:
             try:
                 self.notifications[resp].remove(mobj.author)
-            except:
+            except BaseException:
                 pass
         self.save_notifications()
         self.notification_lock.release()
         return await self.message(mobj.channel, f"You will stop being notified on {resp}")
-        
+
     async def process_message(self, message):
-        if message.author.name == 'Arsenios': return
+        if message.author.name == 'Arsenios':
+            return
         await self.bot.notification_lock.acquire()
         msg = message.content.lower()
         notifiers = set()
@@ -104,21 +108,18 @@ class NOTIFYBOT:
             self.bot.notification_lock.release()
             return
         self.bot.notification_lock.release()
-        if not notifiers: return
+        if not notifiers:
+            return
         await self.bot.sleepers_lock.acquire()
         notifiers -= self.bot.sleepers
         self.bot.sleepers_lock.release()
-        if notifiers: 
+        if notifiers:
             for cur in notifiers:
                 await self.bot.message(cur, f"You have been mentioned in {message.channel.mention} on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. The message was: \n\t```{message.author}: {message.content}```")
-        #await self.bot.message(message.channel, f"{', '.join(x.mention for x in notifiers)}")
+        # await self.bot.message(message.channel, f"{', '.join(x.mention for x
+        # in notifiers)}")
         return
-        
-        
-        
-        
-        
-        
-        
+
+
 def setup(bot):
     NOTIFYBOT(bot)
