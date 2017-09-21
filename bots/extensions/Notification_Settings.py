@@ -116,9 +116,10 @@ class NOTIFYBOT:
         self.bot.sleepers_lock.release()
         if notifiers:
             for cur in notifiers:
+                if message.author == cur:
+                    continue
                 await self.bot.message(cur, f"You have been mentioned in {message.channel.mention} on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. The message was: \n\t```{message.author}: {message.content}```")
-        # await self.bot.message(message.channel, f"{', '.join(x.mention for x
-        # in notifiers)}")
+
         return
 
 
