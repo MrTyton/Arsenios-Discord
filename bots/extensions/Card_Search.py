@@ -80,10 +80,11 @@ class CARDBOT:
         latest_picture = self.card_get_image(card, last_set, card.printings)
         if latest_picture:
             embd.set_image(url=latest_picture.image_url)
-            return await self.embed(mobj.channel, embd) 
+            return await self.embed(mobj.channel, embd)
         else:
-            self.message(mobj.channel, "There is no image for this card, unsure why.")
-
+            self.message(
+                mobj.channel,
+                "There is no image for this card, unsure why.")
 
     def card_get_image(self, card, set, all_sets):
         iterator = Card.where(name=card.name, set=set).iter()
@@ -163,7 +164,7 @@ class CARDBOT:
             mana_costs = replace_symbols(card.mana_cost)
             embd.add_field(name="Mana Cost", value=mana_costs)
             embd.add_field(name="CMC", value=card.cmc)
-                
+
         last_set = card.printings[-1]
         embd.add_field(name="Last Printing", value=last_set)
         if len(card.printings) > 1:
@@ -210,7 +211,8 @@ class CARDBOT:
                 url=f"http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid={card.multiverse_id}"
             )
             last_set = card.printings[-1]
-            latest_picture = self.card_get_image(card, last_set, card.printings)
+            latest_picture = self.card_get_image(
+                card, last_set, card.printings)
             embd.set_image(url=latest_picture.image_url)
 
             return await self.embed(mobj.channel, embd)
