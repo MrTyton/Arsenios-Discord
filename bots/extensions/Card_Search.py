@@ -77,15 +77,25 @@ class CARDBOT:
             url=f"http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid={card.multiverse_id}"
         )
         last_set = card.printings[-1]
-        latest_picture = self.card_get_image(card, last_set)
-        embd.set_image(url=latest_picture.image_url)
+        latest_picture = self.card_get_image(card, last_set, card.printings)
+        if latest_picture:
+            embd.set_image(url=latest_picture.image_url)
+            return await self.embed(mobj.channel, embd) 
+        else:
+            self.message(mobj.channel, "There is no image for this card, unsure why.")
 
-        return await self.embed(mobj.channel, embd)
 
-    def card_get_image(self, card, set):
+    def card_get_image(self, card, set, all_sets):
         iterator = Card.where(name=card.name, set=set).iter()
         for i in iterator:
-            return i
+            if i.name == card.name and i.image_url:
+                return i
+        all_sets.reverse()
+        for cur_printing in all_sets[1:]:
+            iterator = Card.where(card=card.name, set=cur_printing).iter()
+            for i in iterator:
+                if i.name == card.name and i.image_url:
+                    return i
 
     @ChatBot.action('[Card Name]')
     async def cardfull(self, args, mobj):
@@ -153,6 +163,7 @@ class CARDBOT:
             mana_costs = replace_symbols(card.mana_cost)
             embd.add_field(name="Mana Cost", value=mana_costs)
             embd.add_field(name="CMC", value=card.cmc)
+                
         last_set = card.printings[-1]
         embd.add_field(name="Last Printing", value=last_set)
         if len(card.printings) > 1:
@@ -176,20 +187,22 @@ class CARDBOT:
             embd.add_field(
                 name="Subtypes",
                 value=f"{', '.join(card.subtypes)}")
-        if 'creature' in card.type:
+        if 'Creature' in card.type:
+            card.power = card.power.replace("*", "\*")
+            card.toughness = card.toughness.replace("*", "\*")
             embd.add_field(
                 name="Power/Toughness",
                 value=f"{card.power}/{card.toughness}")
-        if 'planeswalker' in card.type:
+        if 'Planeswalker' in card.type:
             embd.add_field(name="Loyalty", value=card.loyalty)
         if card.text:
             text = replace_symbols(card.text)
             embd.add_field(name="Card Text", value=text)
-        latest_picture = self.card_get_image(card, last_set)
+        latest_picture = self.card_get_image(card, last_set, card.printings)
         embd.set_image(url=latest_picture.image_url)
         try:
             await self.embed(mobj.channel, embd)
-        except BaseException:
+        except BaseException as e:
             await self.message(mobj.channel, "Something went wrong when getting all of the information. Here's the image instead.")
             embd = Embed(
                 title=card.name,
@@ -197,7 +210,7 @@ class CARDBOT:
                 url=f"http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid={card.multiverse_id}"
             )
             last_set = card.printings[-1]
-            latest_picture = self.card_get_image(card, last_set)
+            latest_picture = self.card_get_image(card, last_set, card.printings)
             embd.set_image(url=latest_picture.image_url)
 
             return await self.embed(mobj.channel, embd)
