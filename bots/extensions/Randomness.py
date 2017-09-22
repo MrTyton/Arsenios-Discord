@@ -38,7 +38,7 @@ class RANDOMBOT():
         Asks the magic 8-bot a question, and recieve a response
         """
         if not args:
-            return await self.message(mobj.channel, "Question is hazy, please try again.")
+            return await self.error(mobj.channel, "Question is hazy, please try again.")
 
         return await self.message(mobj.channel, choice(self.eightball))
 
@@ -51,7 +51,7 @@ class RANDOMBOT():
         Example: !roll 3d6
         """
         if not args or len(args) > 1:
-            return await self.message(mobj.channel, "Invalid arg count")
+            return await self.error(mobj.channel, "Invalid arg count")
 
         x, = args
         if x == "barrel":
@@ -60,8 +60,9 @@ class RANDOMBOT():
             dice, sides = x.split("d")
             ans = []
             if not dice.isnumeric() or not sides.isnumeric():
-                return await self.message(mobj.channel, "Non-numeric args given.")
-            if int(dice) > 100 or int(dice) < 1 or int(sides) > 1000 or int(sides) < 1:
+                return await self.error(mobj.channel, "Non-numeric args given.")
+            if int(dice) > 100 or int(dice) < 1 or int(
+                    sides) > 1000 or int(sides) < 1:
                 return await self.message(mobj.channel, "Invalid Argument Range")
             for i in range(int(dice)):
                 ans.append(randint(1, int(sides)))
@@ -70,11 +71,11 @@ class RANDOMBOT():
                 "=" + "".join([self.emojis[x] for x in str(summation).zfill(len(str(summation)))])
         else:
             if not x.isnumeric():
-                return await self.message(mobj.channel, "Non-numeric arg given")
+                return await self.error(mobj.channel, "Non-numeric arg given")
 
             num = int(x)  # bad
             if num < 1 or num > 1000:
-                return await self.message(mobj.channel, "Invalid range given")
+                return await self.error(mobj.channel, "Invalid range given")
 
             res = [self.emojis[x] for x in str(randint(1, num)).zfill(len(x))]
         return await self.message(mobj.channel, "".join(res))

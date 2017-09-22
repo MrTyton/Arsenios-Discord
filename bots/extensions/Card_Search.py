@@ -17,7 +17,7 @@ class CARDBOT:
         try:
             cards = Card.where(name=" ".join(args)).iter()
         except BaseException:
-            await self.bot.message(mobj.channel, "Something broke when requesting cards.")
+            await self.bot.error(mobj.channel, "Something broke when requesting cards.")
             return None
 
         cards_ = dict()
@@ -31,7 +31,7 @@ class CARDBOT:
                 if len(entered) >= 15:
                     break
         if len(cards_) == 0:
-            await self.bot.message(mobj.channel, "No cards found.")
+            await self.bot.error(mobj.channel, "No cards found.")
             return None
         if len(cards_) > 1:
             message = "```What card would you like:\n"
@@ -55,7 +55,7 @@ class CARDBOT:
         try:
             return cards_[key]
         except (ValueError, KeyError):
-            await self.bot.message(mobj.channel, "Invalid key.")
+            await self.bot.error(mobj.channel, "Invalid key.")
             return None
 
     @ChatBot.action('[Card Name]')
@@ -82,7 +82,7 @@ class CARDBOT:
             embd.set_image(url=latest_picture.image_url)
             return await self.embed(mobj.channel, embd)
         else:
-            self.message(
+            self.error(
                 mobj.channel,
                 "There is no image for this card, unsure why.")
 
@@ -204,7 +204,7 @@ class CARDBOT:
         try:
             await self.embed(mobj.channel, embd)
         except BaseException as e:
-            await self.message(mobj.channel, "Something went wrong when getting all of the information. Here's the image instead.")
+            await self.error(mobj.channel, "Something went wrong when getting all of the information. Here's the image instead.")
             embd = Embed(
                 title=card.name,
                 colour=Color(0x7289da),

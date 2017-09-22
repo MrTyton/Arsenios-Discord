@@ -74,6 +74,7 @@ class ArseniosBot(ChatBot):
                 output += f'    {c} {self.HELPMSGS.get(c, "")}\n'
         output += f'\nFor more info on each command, use \'{ChatBot.PREFIX}help command\''
         return await self.message(mobj.channel, self.pre_text(output))
+        
 
 
 if __name__ == "__main__":

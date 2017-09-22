@@ -89,7 +89,7 @@ class TOURNAMENTBOT:
         try:
             await self.add_tournament(args[0], args[1], mobj.channel)
         except Exception as e:
-            return await self.message(mobj.channel, f"{e}")
+            return await self.error(mobj.channel, f"{e}")
 
     @ChatBot.action('[Tournament Name] [Player]')
     async def track(self, args, mobj):

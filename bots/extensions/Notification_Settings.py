@@ -54,7 +54,7 @@ class NOTIFYBOT:
         Adds you to a notification list on a word. Whenever the word is said in a message, you will be notified.
         """
         if len(args) < 1:
-            return await self.message(mobj.channel, "Invalid Number of Arguments.")
+            return await self.error(mobj.channel, "Invalid Number of Arguments.")
         await self.notification_lock.acquire()
         self.notifications[" ".join(args).lower().strip()].add(mobj.author)
         self.save_notifications()
@@ -67,7 +67,7 @@ class NOTIFYBOT:
         Sleeps notifications for you for period of time in seconds. If the bot restarts (which it does every 2 hours), notification will be re-enabled then.
         """
         if len(args) != 1 or not args[0].isnumeric():
-            return await self.message(mobj.channel, "Invalid Argument")
+            return await self.error(mobj.channel, "Invalid Argument")
         await self.sleepers_lock.acquire()
         self.sleepers.add(mobj.author)
         self.sleepers_lock.release()
@@ -83,7 +83,7 @@ class NOTIFYBOT:
         Removes notifications on keyword.
         """
         if len(args) < 1:
-            return await self.message(mobj.channel, "Invalid Argument")
+            return await self.error(mobj.channel, "Invalid Argument")
         await self.notification_lock.acquire()
         resp = " ".join(args).lower().strip()
         if resp in self.notifications:

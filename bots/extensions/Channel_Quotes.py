@@ -51,7 +51,7 @@ class QUOTEBOT:
         """
         if len(args) == 0:
             if len(self.quotes) == 0:
-                return await self.message(mobj.channel, "No quotes in the database")
+                return await self.error(mobj.channel, "No quotes in the database")
             embd = Embed(
                 title="List of Options",
                 colour=Color(0x7289da)
@@ -63,7 +63,7 @@ class QUOTEBOT:
         elif args[0].lower() == "add" and len(args) > 2:
             key = args[1].lower()
             if key in self.quotes:
-                return await self.message(mobj.channel, "Key is already in quotes database.")
+                return await self.error(mobj.channel, "Key is already in quotes database.")
             value = [mobj.author, " ".join(args[2:]).strip()]
             self.quotes[key] = value
             await self.quote_lock.acquire()
@@ -79,7 +79,7 @@ class QUOTEBOT:
                 self.quote_lock.release()
                 return await self.message(mobj.channel, f"Quote {key} has been removed, you monster.")
             else:
-                return await self.message(mobj.channel, "That key is not in the quote database.")
+                return await self.error(mobj.channel, "That key is not in the quote database.")
         elif len(args) == 1:
             key = args[0].lower()
             if key in self.quotes:
@@ -91,7 +91,7 @@ class QUOTEBOT:
                 embd.add_field(name=f"{value[0]}", value=f"{value[1]}")
                 return await self.embed(mobj.channel, embd)
         else:
-            return await self.message(mobj.channel, "Invalid arguments")
+            return await self.error(mobj.channel, "Invalid arguments")
 
 
 def setup(bot):

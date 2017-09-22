@@ -15,30 +15,30 @@ class MEDIABOT():
         Example: !yt how do I take a screenshot
         """
         if not args:
-            return await self.message(mobj.channel, "Empty search terms")
+            return await self.error(mobj.channel, "Empty search terms")
 
         tube = "https://www.youtube.com"
         resp = get(
             f"{tube}/results?search_query={self.replace(' '.join(args))}")
         if resp.status_code != 200:
-            return await self.message(mobj.channel, "Failed to retrieve search")
+            return await self.error(mobj.channel, "Failed to retrieve search")
 
         # Build a BS parser and find all Youtube links on the page
         bs = BS(resp.text, "html.parser")
         main_d = bs.find('div', id='results')
         if not main_d:
-            return await self.message(mobj.channel, 'Failed to find results')
+            return await self.error(mobj.channel, 'Failed to find results')
 
         items = main_d.find_all("div", class_="yt-lockup-content")
         if not items:
-            return await self.message(mobj.channel, "No videos found")
+            return await self.error(mobj.channel, "No videos found")
 
         # Loop until we find a valid non-advertisement link
         for container in items:
             href = container.find('a', class_='yt-uix-sessionlink')['href']
             if href.startswith('/watch'):
                 return await self.message(mobj.channel, f'{tube}{href}')
-        return await self.message(mobj.channel, "No YouTube video found")
+        return await self.error(mobj.channel, "No YouTube video found")
 
     @ChatBot.action('[Search terms]')
     async def nyaa(self, args, mobj):
@@ -47,26 +47,26 @@ class MEDIABOT():
         Example: !nyaa horriblesubs boruto 01
         """
         if not args:
-            return await self.message(mobj.channel, "Empty search terms")
+            return await self.error(mobj.channel, "Empty search terms")
 
         tube = "https://www.nyaa.si"
         resp = get(
             f"{tube}/?q={self.replace(' '.join(args))}&f=0&c=1_2&s=id&o=desc")
         if resp.status_code != 200:
-            return await self.message(mobj.channel, "Failed to retrieve search")
+            return await self.error(mobj.channel, "Failed to retrieve search")
 
         # Build a BS parser and find all Nyaa links on the page
         bs = BS(resp.text, "html.parser")
         main_d = bs.find('tbody')
         if not main_d:
-            return await self.message(mobj.channel, 'Failed to find results')
+            return await self.error(mobj.channel, 'Failed to find results')
 
         items = main_d.find_all(
             "tr", {
                 'class': [
                     'danger', 'success', 'default']})
         if not items:
-            return await self.message(mobj.channel, "Failed to find results")
+            return await self.error(mobj.channel, "Failed to find results")
 
         # Loop until we find a valid non-advertisement link
         for find_horrible in [True, False]:
@@ -114,7 +114,7 @@ class MEDIABOT():
                     value=f"[Search]({tube}/?q={self.replace('%20'.join(args))}&f=0&c=1_2&s=id&o=desc)")
                 return await self.embed(mobj.channel, embd)
 
-        return await self.message(mobj.channel, "No Torrents with seeders found")
+        return await self.error(mobj.channel, "No Torrents with seeders found")
 
 
 def setup(bot):

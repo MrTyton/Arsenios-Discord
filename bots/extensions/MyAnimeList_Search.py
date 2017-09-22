@@ -43,7 +43,7 @@ class MALBOT:
         try:
             animes = await self.pyanimelist.search_all_anime(f"{' '.join(args)}")
         except BaseException:
-            return await self.message(mobj.channel, "Cannot find anything")
+            return await self.error(mobj.channel, "Cannot find anything")
 
         animes_ = dict(enumerate(animes[:15]))
         if len(animes_) > 1:
@@ -68,7 +68,7 @@ class MALBOT:
         try:
             anime = animes_[key]
         except (ValueError, KeyError):
-            return await self.message(mobj.channel, "Invalid key.")
+            return await self.error(mobj.channel, "Invalid key.")
 
         embed = Embed(
             title=anime.title,
@@ -102,7 +102,7 @@ class MALBOT:
         try:
             mangas = await self.pyanimelist.search_all_manga(f"{' '.join(args)}")
         except BaseException:
-            return await self.message(mobj.channel, "Cannot find anything")
+            return await self.error(mobj.channel, "Cannot find anything")
 
         mangas_ = dict(enumerate(mangas[:15]))
         if len(mangas_) > 1:
@@ -127,7 +127,7 @@ class MALBOT:
         try:
             manga = mangas_[key]
         except (ValueError, KeyError):
-            return await self.message(mobj.channel, "Invalid key.")
+            return await self.error(mobj.channel, "Invalid key.")
         embed = Embed(
             title=manga.title,
             colour=Color(0x7289da),

@@ -7,6 +7,7 @@ from html.entities import name2codepoint as codepoint
 # @param text The HTML (or XML) source text.
 # @return The plain text, as a Unicode string, if necessary.
 
+
 def unescape(text):
     def fixup(m):
         text = m.group(0)
@@ -25,5 +26,5 @@ def unescape(text):
                 text = chr(codepoint[text[1:-1]])
             except KeyError:
                 pass
-        return text # leave as is
+        return text  # leave as is
     return re.sub("&#?\w+;", fixup, text)

@@ -288,6 +288,9 @@ class ChatBot(Bot):
     async def process_message(self, msg):
         return
 
+    async def error(self, channel, error):
+        return await self.message(channel, f"Error: {error}")
+
     def setup_events(self):
         """
         Set up all events for the Bot
