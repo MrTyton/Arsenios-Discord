@@ -49,9 +49,10 @@ class TOURNAMENTBOT:
         info = {}
         info['url'] = url
         info['round'] = 1
-        info['players'] = set([])
+        info['players'] = set()
         info['title'] = name
         info['channel'] = chan
+        info['dropped'] = dict()
         await self.tournament_lock.acquire()
         tournaments = await self.load_tournaments()
         namestring = f"{name} {chan.id}"
@@ -118,6 +119,33 @@ class TOURNAMENTBOT:
                 url = self.generate_url(cur['url'], cur['round'])
                 if not url:
                     continue
+                dropcheck = self.check_drops(
+                    cur['url'], cur['players'], cur['round'])
+
+                if dropcheck:
+                    drop_parse = self.parse_url(url, dropcheck)
+                    drop_parse = self.parse_players(drop_parse, cur['round'])
+
+                    for dropper in drop_parse:
+                        drop_parse[dropper]['round'] = cur['round']
+
+                    cur['players'] -= dropcheck
+                    cur['dropped'].update(drop_parse)
+
+                    embed = Embed(
+                        title=f"{cur['title']} Round {cur['round']}",
+                        colour=Color(0x7289da),
+                    )
+
+                    for playa, nfo in sorted(
+                            drop_parse.items(), key=lambda x: x[1]['place']):
+                        embed.add_field(
+                            name=playa,
+                            value=f"DROPPED FROM TOURNAMENT in {self.ordinalize(nfo['place'])} place with a record of {nfo['record']}",
+                            inline=False)
+
+                    await self.bot.embed(cur['channel'], embed)
+
                 parsed_page = self.parse_url(url, cur['players'])
                 if parsed_page == []:
                     cur['round'] += 1
@@ -146,6 +174,12 @@ class TOURNAMENTBOT:
                         value=f"In {self.ordinalize(nfo['place'])} place with a record of {nfo['record']}",
                         inline=False)
 
+                for playa, nfo in cur['dropped'].items():
+                    embed.add_field(
+                        name=playa,
+                        value=f"Dropped from tournament in round {nfo['round']} with a record of {nfo['record']}",
+                        inline=False)
+
                 await self.bot.embed(cur['channel'], embed)
 
                 cur['round'] += 1
@@ -158,7 +192,7 @@ class TOURNAMENTBOT:
             await self.save_tournaments(tournaments)
             self.tournament_lock.release()
 
-            await sleep(300)
+            await sleep(5)
 
     def parse_url(self, url, player_list):
         """
@@ -196,23 +230,41 @@ class TOURNAMENTBOT:
 
     # should modify this to take into account that there are classics. This
     # right now should only get the first tournament.
-    def generate_url(self, base, current_round):
+    def generate_url(self, base, current_round, typer='standings'):
         if "wizards" in base:
             d = date.today()
-            url = f"http://magic.wizards.com/en/events/coverage/gpdc/round-{current_round}-standings-{d.strftime('%Y-%m-%d')}"
-        if "starcity" in base:
+            url = f"http://magic.wizards.com/en/events/coverage/gpdc/round-{current_round}-{typer}-{d.strftime('%Y-%m-%d')}"
+            resp = get(url)
+            if resp.status_code != 200:
+                return None
+        elif "starcity" in base:
             resp = get(base)
             if resp.status_code != 200:
                 return None
             bs = BS(resp.text, 'html.parser')
             table = bs.find('table', {"class": "standings_table"})
             rows = table.find_all('tr')
-            url = [x.find_all('td')[2].find('a')['href'] for x in rows if x.find_all('td')[
-                2].text == str(current_round)]
+            url = [
+                x.find_all('td')[
+                    2 if typer == 'standings' else 0].find('a')['href'] for x in rows if x.find_all('td')[
+                    2 if typer == 'standings' else 0].text == str(current_round)]
             if url == []:
                 return None
             url = url[0]
         return url
+
+    def check_drops(self, base, players, current_round):
+        url = self.generate_url(base, current_round, typer='pairings')
+        active_players = self.parse_url(url, players)
+        active_players = set(
+            cur.find_all('td')[1].get_text() for cur in active_players) | set(
+            cur.find_all('td')[4].get_text() for cur in active_players)
+        dropped_players = set()
+        for cur in players:
+            if not any(cur in x for x in active_players):
+                dropped_players.add(cur)
+
+        return dropped_players
 
 
 def setup(bot):
