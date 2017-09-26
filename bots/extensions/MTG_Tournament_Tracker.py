@@ -192,7 +192,7 @@ class TOURNAMENTBOT:
             await self.save_tournaments(tournaments)
             self.tournament_lock.release()
 
-            await sleep(5)
+            await sleep(300)
 
     def parse_url(self, url, player_list):
         """
