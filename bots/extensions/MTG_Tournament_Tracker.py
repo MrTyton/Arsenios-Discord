@@ -124,16 +124,17 @@ class TOURNAMENTBOT:
 
                 if dropcheck:
                     drop_parse = self.parse_url(url, dropcheck)
-                    drop_parse = self.parse_players(drop_parse, cur['round'])
+                    drop_parse = self.parse_players(
+                        drop_parse, cur['round'] - 1)
 
                     for dropper in drop_parse:
-                        drop_parse[dropper]['round'] = cur['round']
+                        drop_parse[dropper]['round'] = cur['round'] - 1
 
                     cur['players'] -= dropcheck
                     cur['dropped'].update(drop_parse)
 
                     embed = Embed(
-                        title=f"{cur['title']} Round {cur['round']}",
+                        title=f"{cur['title']} Round {cur['round']-1}",
                         colour=Color(0x7289da),
                     )
 

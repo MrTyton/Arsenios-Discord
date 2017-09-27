@@ -67,14 +67,15 @@ class ArseniosBot(ChatBot):
         output += '<> means that the input is optional, [] means that the input is required\n\n'
         for k, g in groupby(self.ACTIONS.keys(),
                             key=lambda x: self.ACTIONS[x].__module__):
-            if k == "__main__": continue
-            output += f'{k}:\n'.replace("extensions.", "").replace("_", " ").strip(" ")
+            if k == "__main__":
+                continue
+            output += f'{k}:\n'.replace("extensions.",
+                                        "").replace("_", " ").strip(" ")
             for cur in g:
                 c = f'{cur}'
                 output += f'    {c} {self.HELPMSGS.get(c, "")}\n'
         output += f'\nFor more info on each command, use \'{ChatBot.PREFIX}help command\''
         return await self.message(mobj.channel, self.pre_text(output))
-        
 
 
 if __name__ == "__main__":
