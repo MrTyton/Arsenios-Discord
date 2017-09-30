@@ -86,6 +86,7 @@ class TOURNAMENTBOT:
         Exampe:
             !tournament http://magic.wizards.com/en/events/coverage/gpdc/ GPDC
             !tournament http://www.starcitygames.com/events/160917_louisville.html SCG_Louisville
+        Tournaments are trakced on a per-channel basis.
         """
         try:
             await self.add_tournament(args[0], args[1], mobj.channel)
@@ -96,6 +97,7 @@ class TOURNAMENTBOT:
     async def track(self, args, mobj):
         """
         Tracks a player in the specified tournament.
+        Requires that the tournament is added first through !tournament.
         Example:
             !track GPDC Sukenik
         """
@@ -136,6 +138,7 @@ class TOURNAMENTBOT:
                     embed = Embed(
                         title=f"{cur['title']} Round {cur['round']-1}",
                         colour=Color(0x7289da),
+                        url=f"{cur['url']}"
                     )
 
                     for playa, nfo in sorted(
@@ -166,6 +169,7 @@ class TOURNAMENTBOT:
                 embed = Embed(
                     title=f"{cur['title']} Round {cur['round']}",
                     colour=Color(0x7289da),
+                    url=f"{cur['url']}"
                 )
 
                 for playa, nfo in sorted(
