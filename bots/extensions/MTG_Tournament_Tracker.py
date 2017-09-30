@@ -234,7 +234,7 @@ class TOURNAMENTBOT:
     def generate_url(self, base, current_round, typer='standings'):
         if "wizards" in base:
             d = date.today()
-            url = f"http://magic.wizards.com/en/events/coverage/gpdc/round-{current_round}-{typer}-{d.strftime('%Y-%m-%d')}"
+            url = f"{base}round-{current_round}-{typer}-{d.strftime('%Y-%m-%d')}"
             resp = get(url)
             if resp.status_code != 200:
                 return None
