@@ -5,6 +5,7 @@ from discord import Embed, Color
 from random import choice
 from os.path import isfile
 from pathlib import Path
+from collections import defaultdict
 
 
 class QUOTEBOT:
@@ -35,7 +36,7 @@ class QUOTEBOT:
         """
         Save quotes to quote pickle file.
         """
-        with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.data'), 'wb') as fp:
+        with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.quotes'), 'wb') as fp:
             pickle.dump(self.bot.quotes, fp)
         return
 
@@ -49,10 +50,9 @@ class QUOTEBOT:
         Using !quote remove <Key> will remove the quote from the database
         Using !quote <Key> will print out the quote
         """
-        try:
-            server_quotes = self.quotes[mobj.server.id]
-        except BaseException:
-            return await self.error(mobj.channel, "No quotes in the database")
+        if mobj.server.id not in self.quotes:
+            self.quotes[mobj.server.id] = {}
+        server_quotes = self.quotes[mobj.server.id]
         if len(args) == 0:
             if len(server_quotes) == 0:
                 return await self.error(mobj.channel, "No quotes in the database")
