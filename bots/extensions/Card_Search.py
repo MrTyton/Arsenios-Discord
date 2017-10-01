@@ -3,6 +3,7 @@ from Bot import ChatBot
 from discord import Embed, Color
 from mtgsdk import Card
 
+
 class CARDBOT:
 
     def __init__(self, bot):
@@ -97,7 +98,7 @@ class CARDBOT:
             for i in iterator:
                 if i.name == card.name and i.image_url:
                     return i
-    
+
     def replace_symbols(self, input, magic_dict):
         for cur in magic_dict:
             if cur in input:
@@ -152,7 +153,7 @@ class CARDBOT:
                         "{T}": magic_emojis['Tap'],
                     }
                     self.magic_dict[mobj.server.id] = mana_dict
-                except:
+                except BaseException:
                     self.magic_dict[mobj.server.id] = {}
 
             embd = Embed(
@@ -165,7 +166,8 @@ class CARDBOT:
             else:
                 embd.add_field(name="Color", value=f'Colorless')
             if card.mana_cost:
-                mana_costs = self.card_replace_symbols(card.mana_cost, self.magic_dict[mobj.server.id])
+                mana_costs = self.card_replace_symbols(
+                    card.mana_cost, self.magic_dict[mobj.server.id])
                 embd.add_field(name="Mana Cost", value=mana_costs)
                 embd.add_field(name="CMC", value=card.cmc)
 
@@ -177,12 +179,14 @@ class CARDBOT:
                     value=f"{', '.join([x for x in card.printings if x != last_set])}")
             if card.legalities:
                 legalities = {x["format"]: f'{x["format"]}: {x["legality"]}' for x in card.legalities if
-                          x['legality'] == 'Banned' or x['legality'] == 'Restricted'}            
+                              x['legality'] == 'Banned' or x['legality'] == 'Restricted'}
                 for format in ["Standard", "Modern", "Legacy", "Vintage"]:
                     if format in [x["format"] for x in card.legalities]:
                         legalities[format] = [
                             f'{q["format"]}: {q["legality"]}' for q in card.legalities if q["format"] == format][0]
-                embd.add_field(name="Legality", value='\n'.join(legalities.values()))
+                embd.add_field(
+                    name="Legality", value='\n'.join(
+                        legalities.values()))
             embd.add_field(name="Type", value=card.type)
             if card.supertypes:
                 embd.add_field(
@@ -201,9 +205,11 @@ class CARDBOT:
             if 'Planeswalker' in card.type:
                 embd.add_field(name="Loyalty", value=card.loyalty)
             if card.text:
-                text = self.card_replace_symbols(card.text, self.magic_dict[mobj.server.id])
+                text = self.card_replace_symbols(
+                    card.text, self.magic_dict[mobj.server.id])
                 embd.add_field(name="Card Text", value=text)
-            latest_picture = self.card_get_image(card, last_set, card.printings)
+            latest_picture = self.card_get_image(
+                card, last_set, card.printings)
             embd.set_image(url=latest_picture.image_url)
             try:
                 await self.embed(mobj.channel, embd)
@@ -220,7 +226,7 @@ class CARDBOT:
                 embd.set_image(url=latest_picture.image_url)
 
                 return await self.embed(mobj.channel, embd)
-        except:
+        except BaseException:
             await self.error(mobj.channel, "Something went wrong when getting the card, unsure what.")
 
 

@@ -1,4 +1,3 @@
-from Bot import ChatBot
 from random import choice
 from os.path import isfile, join
 from pathlib import Path

@@ -133,7 +133,7 @@ class MALBOT:
             colour=Color(0x7289da),
             url="https://myanimelist.net/manga/{0.id}/{0.title}".format(manga).replace(" ", "%20")
         )
-        #embed.set_author(name=author.display_name, icon_url=avatar)
+        # embed.set_author(name=author.display_name, icon_url=avatar)
         embed.set_image(url=manga.image)
         embed.add_field(
             name="Length",

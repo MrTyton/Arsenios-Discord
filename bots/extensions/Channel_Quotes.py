@@ -51,7 +51,7 @@ class QUOTEBOT:
         """
         try:
             server_quotes = self.quotes[mobj.server.id]
-        except:
+        except BaseException:
             return await self.error(mobj.channel, "No quotes in the database")
         if len(args) == 0:
             if len(server_quotes) == 0:
