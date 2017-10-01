@@ -3,8 +3,6 @@ from Bot import ChatBot
 from discord import Embed, Color
 from mtgsdk import Card
 
-import sys, os
-
 class CARDBOT:
 
     def __init__(self, bot):
@@ -223,9 +221,6 @@ class CARDBOT:
 
                 return await self.embed(mobj.channel, embd)
         except:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
             await self.error(mobj.channel, "Something went wrong when getting the card, unsure what.")
 
 
