@@ -3,14 +3,16 @@ from Bot import ChatBot
 from discord import Embed, Color
 from mtgsdk import Card
 
+import sys, os
 
 class CARDBOT:
 
     def __init__(self, bot):
         self.bot = bot
         self.bot.get_card = self.get_card  # there has to be a better way to do this
-        self.bot.magic_emojis = {}
         self.bot.card_get_image = self.card_get_image
+        self.bot.card_replace_symbols = self.replace_symbols
+        self.bot.magic_dict = {}
 
     async def get_card(self, args, mobj):
         author = mobj.author
@@ -97,6 +99,12 @@ class CARDBOT:
             for i in iterator:
                 if i.name == card.name and i.image_url:
                     return i
+    
+    def replace_symbols(self, input, magic_dict):
+        for cur in magic_dict:
+            if cur in input:
+                input = input.replace(cur, str(magic_dict[cur]))
+        return input
 
     @ChatBot.action('[Card Name]')
     async def cardfull(self, args, mobj):
@@ -106,116 +114,119 @@ class CARDBOT:
         If there are multiple cards with similar name, will prompt to select one.
         Displays all the information about the card. For only the card image, use !card
         """
-        card = await self.get_card(args, mobj)
-        if not card:
-            return
-
-        if not len(self.magic_emojis):
-            for cur in self.client.get_all_emojis():
-                self.magic_emojis[cur.name] = cur
-
-        mana_dict = {
-            "{B}": self.magic_emojis['BlackMana'],
-            "{U}": self.magic_emojis['BlueMana'],
-            "{W}": self.magic_emojis['WhiteMana'],
-            "{R}": self.magic_emojis['RedMana'],
-            "{G}": self.magic_emojis['GreenMana'],
-            "{X}": self.magic_emojis['XMana'],
-            "{C}": self.magic_emojis["CMana"],
-            "{U/P}": self.magic_emojis['PhyBlue'],
-            "{B/P}": self.magic_emojis['PhyBlack'],
-            "{G/P}": self.magic_emojis['PhyGreen'],
-            "{W/P}": self.magic_emojis['PhyWhite'],
-            "{R/P}": self.magic_emojis['PhyRed'],
-            "{0}": self.magic_emojis["0Mana"],
-            "{1}": self.magic_emojis["1Mana"],
-            "{2}": self.magic_emojis["2Mana"],
-            "{3}": self.magic_emojis["3Mana"],
-            "{4}": self.magic_emojis["4Mana"],
-            "{5}": self.magic_emojis["5Mana"],
-            "{6}": self.magic_emojis["6Mana"],
-            "{7}": self.magic_emojis["7Mana"],
-            "{8}": self.magic_emojis["8Mana"],
-            "{9}": self.magic_emojis["9Mana"],
-            "{10}": self.magic_emojis["10Mana"],
-            "{11}": self.magic_emojis["11Mana"],
-            "{12}": self.magic_emojis["12Mana"],
-            "{13}": self.magic_emojis["13Mana"],
-            "{15}": self.magic_emojis["15Mana"],
-            "{T}": self.magic_emojis['Tap'],
-        }
-
-        def replace_symbols(input):
-            for cur in mana_dict:
-                if cur in input:
-                    input = input.replace(cur, str(mana_dict[cur]))
-            return input
-
-        embd = Embed(
-            title=card.name,
-            colour=Color(0x7289da),
-            url=f"http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid={card.multiverse_id}"
-        )
-        if card.colors:
-            embd.add_field(name="Color", value=f'{", ".join(card.colors)}')
-        else:
-            embd.add_field(name="Color", value=f'Colorless')
-        if card.mana_cost:
-            mana_costs = replace_symbols(card.mana_cost)
-            embd.add_field(name="Mana Cost", value=mana_costs)
-            embd.add_field(name="CMC", value=card.cmc)
-
-        last_set = card.printings[-1]
-        embd.add_field(name="Last Printing", value=last_set)
-        if len(card.printings) > 1:
-            embd.add_field(
-                name="Other Printings",
-                value=f"{', '.join([x for x in card.printings if x != last_set])}")
-
-        legalities = {x["format"]: f'{x["format"]}: {x["legality"]}' for x in card.legalities if
-                      x['legality'] == 'Banned' or x['legality'] == 'Restricted'}
-        for format in ["Standard", "Modern", "Legacy", "Vintage"]:
-            if format in [x["format"] for x in card.legalities]:
-                legalities[format] = [
-                    f'{q["format"]}: {q["legality"]}' for q in card.legalities if q["format"] == format][0]
-        embd.add_field(name="Legality", value='\n'.join(legalities.values()))
-        embd.add_field(name="Type", value=card.type)
-        if card.supertypes:
-            embd.add_field(
-                name="Supertypes",
-                value=f"{', '.join(card.supertypes)}")
-        if card.subtypes:
-            embd.add_field(
-                name="Subtypes",
-                value=f"{', '.join(card.subtypes)}")
-        if 'Creature' in card.type:
-            card.power = card.power.replace("*", "\*")
-            card.toughness = card.toughness.replace("*", "\*")
-            embd.add_field(
-                name="Power/Toughness",
-                value=f"{card.power}/{card.toughness}")
-        if 'Planeswalker' in card.type:
-            embd.add_field(name="Loyalty", value=card.loyalty)
-        if card.text:
-            text = replace_symbols(card.text)
-            embd.add_field(name="Card Text", value=text)
-        latest_picture = self.card_get_image(card, last_set, card.printings)
-        embd.set_image(url=latest_picture.image_url)
         try:
-            await self.embed(mobj.channel, embd)
-        except BaseException as e:
-            await self.error(mobj.channel, "Something went wrong when getting all of the information. Here's the image instead.")
+            card = await self.get_card(args, mobj)
+            if not card:
+                return
+            if mobj.server.id not in self.magic_dict:
+                magic_emojis = {}
+                for cur in mobj.server.emojis:
+                    magic_emojis[cur.name] = cur
+                try:
+                    mana_dict = {
+                        "{B}": magic_emojis['BlackMana'],
+                        "{U}": magic_emojis['BlueMana'],
+                        "{W}": magic_emojis['WhiteMana'],
+                        "{R}": magic_emojis['RedMana'],
+                        "{G}": magic_emojis['GreenMana'],
+                        "{X}": magic_emojis['XMana'],
+                        "{C}": magic_emojis["CMana"],
+                        "{U/P}": magic_emojis['PhyBlue'],
+                        "{B/P}": magic_emojis['PhyBlack'],
+                        "{G/P}": magic_emojis['PhyGreen'],
+                        "{W/P}": magic_emojis['PhyWhite'],
+                        "{R/P}": magic_emojis['PhyRed'],
+                        "{0}": magic_emojis["0Mana"],
+                        "{1}": magic_emojis["1Mana"],
+                        "{2}": magic_emojis["2Mana"],
+                        "{3}": magic_emojis["3Mana"],
+                        "{4}": magic_emojis["4Mana"],
+                        "{5}": magic_emojis["5Mana"],
+                        "{6}": magic_emojis["6Mana"],
+                        "{7}": magic_emojis["7Mana"],
+                        "{8}": magic_emojis["8Mana"],
+                        "{9}": magic_emojis["9Mana"],
+                        "{10}": magic_emojis["10Mana"],
+                        "{11}": magic_emojis["11Mana"],
+                        "{12}": magic_emojis["12Mana"],
+                        "{13}": magic_emojis["13Mana"],
+                        "{15}": magic_emojis["15Mana"],
+                        "{T}": magic_emojis['Tap'],
+                    }
+                    self.magic_dict[mobj.server.id] = mana_dict
+                except:
+                    self.magic_dict[mobj.server.id] = {}
+
             embd = Embed(
                 title=card.name,
                 colour=Color(0x7289da),
                 url=f"http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid={card.multiverse_id}"
             )
-            last_set = card.printings[-1]
-            latest_picture = self.card_get_image(
-                card, last_set, card.printings)
-            embd.set_image(url=latest_picture.image_url)
+            if card.colors:
+                embd.add_field(name="Color", value=f'{", ".join(card.colors)}')
+            else:
+                embd.add_field(name="Color", value=f'Colorless')
+            if card.mana_cost:
+                mana_costs = self.card_replace_symbols(card.mana_cost, self.magic_dict[mobj.server.id])
+                embd.add_field(name="Mana Cost", value=mana_costs)
+                embd.add_field(name="CMC", value=card.cmc)
 
-            return await self.embed(mobj.channel, embd)
+            last_set = card.printings[-1]
+            embd.add_field(name="Last Printing", value=last_set)
+            if len(card.printings) > 1:
+                embd.add_field(
+                    name="Other Printings",
+                    value=f"{', '.join([x for x in card.printings if x != last_set])}")
+            if card.legalities:
+                legalities = {x["format"]: f'{x["format"]}: {x["legality"]}' for x in card.legalities if
+                          x['legality'] == 'Banned' or x['legality'] == 'Restricted'}            
+                for format in ["Standard", "Modern", "Legacy", "Vintage"]:
+                    if format in [x["format"] for x in card.legalities]:
+                        legalities[format] = [
+                            f'{q["format"]}: {q["legality"]}' for q in card.legalities if q["format"] == format][0]
+                embd.add_field(name="Legality", value='\n'.join(legalities.values()))
+            embd.add_field(name="Type", value=card.type)
+            if card.supertypes:
+                embd.add_field(
+                    name="Supertypes",
+                    value=f"{', '.join(card.supertypes)}")
+            if card.subtypes:
+                embd.add_field(
+                    name="Subtypes",
+                    value=f"{', '.join(card.subtypes)}")
+            if 'Creature' in card.type:
+                card.power = card.power.replace("*", "\*")
+                card.toughness = card.toughness.replace("*", "\*")
+                embd.add_field(
+                    name="Power/Toughness",
+                    value=f"{card.power}/{card.toughness}")
+            if 'Planeswalker' in card.type:
+                embd.add_field(name="Loyalty", value=card.loyalty)
+            if card.text:
+                text = self.card_replace_symbols(card.text, self.magic_dict[mobj.server.id])
+                embd.add_field(name="Card Text", value=text)
+            latest_picture = self.card_get_image(card, last_set, card.printings)
+            embd.set_image(url=latest_picture.image_url)
+            try:
+                await self.embed(mobj.channel, embd)
+            except BaseException as e:
+                await self.error(mobj.channel, "Something went wrong when getting all of the information. Here's the image instead.")
+                embd = Embed(
+                    title=card.name,
+                    colour=Color(0x7289da),
+                    url=f"http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid={card.multiverse_id}"
+                )
+                last_set = card.printings[-1]
+                latest_picture = self.card_get_image(
+                    card, last_set, card.printings)
+                embd.set_image(url=latest_picture.image_url)
+
+                return await self.embed(mobj.channel, embd)
+        except:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
+            await self.error(mobj.channel, "Something went wrong when getting the card, unsure what.")
 
 
 def setup(bot):
