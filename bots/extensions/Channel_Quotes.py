@@ -19,14 +19,14 @@ class QUOTEBOT:
         """
         Loads quotes from quotes pickle file
         """
-        if isfile(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.data')):
-            with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.data'), 'rb') as fp:
+        if isfile(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.quotes')):
+            with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.quotes'), 'rb') as fp:
                 quotes = pickle.load(fp)
                 if not quotes:
                     quotes = {}
         else:
             self.bot.logger("There is no quotes file, creating.")
-            with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.data'), 'wb') as fp:
+            with open(Path(self.bot.DATA_FOLDER, f'{self.bot.name}.quotes'), 'wb') as fp:
                 quotes = {}
                 pickle.dump(quotes, fp)
         return quotes
@@ -49,31 +49,35 @@ class QUOTEBOT:
         Using !quote remove <Key> will remove the quote from the database
         Using !quote <Key> will print out the quote
         """
+        try:
+            server_quotes = self.quotes[mobj.server.id]
+        except:
+            return await self.error(mobj.channel, "No quotes in the database")
         if len(args) == 0:
-            if len(self.quotes) == 0:
+            if len(server_quotes) == 0:
                 return await self.error(mobj.channel, "No quotes in the database")
             embd = Embed(
                 title="List of Options",
                 colour=Color(0x7289da)
             )
 
-            value = "\n".join(self.quotes.keys())
+            value = "\n".join(server_quotes.keys())
             embd.add_field(name=f"List", value=value)
             return await self.embed(mobj.channel, embd)
         elif args[0].lower() == "add" and len(args) > 2:
             key = args[1].lower()
-            if key in self.quotes:
+            if key in server_quotes:
                 return await self.error(mobj.channel, "Key is already in quotes database.")
             value = [mobj.author, " ".join(args[2:]).strip()]
-            self.quotes[key] = value
+            server_quotes[key] = value
             await self.quote_lock.acquire()
             self.save_quotes()
             self.quote_lock.release()
             return await self.message(mobj.channel, f"Added quote {key}.")
         elif args[0].lower() == "remove" and len(args) == 2:
             key = args[1].lower()
-            if key in self.quotes:
-                del self.quotes[key]
+            if key in server_quotes:
+                del server_quotes[key]
                 await self.quote_lock.acquire()
                 self.save_quotes()
                 self.quote_lock.release()
@@ -82,8 +86,8 @@ class QUOTEBOT:
                 return await self.error(mobj.channel, "That key is not in the quote database.")
         elif len(args) == 1:
             key = args[0].lower()
-            if key in self.quotes:
-                value = self.quotes[key]
+            if key in server_quotes:
+                value = server_quotes[key]
                 embd = Embed(
                     title=key,
                     colour=Color(0x7289da)
