@@ -13,6 +13,13 @@ class CARDBOT:
         self.bot.card_replace_symbols = self.replace_symbols
         self.bot.magic_dict = {}
         self.bot.card_get_color = self.card_get_color
+        self.color_dict = {"Red": Color.red(),
+                           "Blue": Color.blue(),
+                           "Green": Color.green(),
+                           "Black": Color(0x000000),
+                           "White": Color(0xffffff),
+                           "Gold": Color.gold(),
+                           "Grey": Color.light_grey()}
 
     def card_get_color(self, card):
         if card.colors:
@@ -22,14 +29,8 @@ class CARDBOT:
                 colors = card.colors[0]
         else:
             colors = "Grey"
-        color_dict = {"Red": Color.red(),
-                      "Blue": Color.blue(),
-                      "Green": Color.green(),
-                      "Black": Color(0x000000),
-                      "White": Color(0xffffff),
-                      "Gold": Color.gold(),
-                      "Grey": Color.light_grey()}
-        return color_dict[colors]
+
+        return self.color_dict[colors]
 
     async def get_card(self, args, mobj):
         author = mobj.author
