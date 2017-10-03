@@ -12,6 +12,24 @@ class CARDBOT:
         self.bot.card_get_image = self.card_get_image
         self.bot.card_replace_symbols = self.replace_symbols
         self.bot.magic_dict = {}
+        self.bot.card_get_color = self.card_get_color
+
+    def card_get_color(self, card):
+        if card.colors:
+            if len(card.colors) > 1:
+                colors = "Gold"
+            else:
+                colors = card.colors[0]
+        else:
+            colors = "Grey"
+        color_dict = {"Red": Color.red(),
+                      "Blue": Color.blue(),
+                      "Green": Color.green(),
+                      "Black": Color(0x000000),
+                      "White": Color(0xffffff),
+                      "Gold": Color.gold(),
+                      "Grey": Color.light_grey()}
+        return color_dict[colors]
 
     async def get_card(self, args, mobj):
         author = mobj.author
@@ -71,10 +89,9 @@ class CARDBOT:
         card = await self.get_card(args, mobj)
         if not card:
             return
-
         embd = Embed(
             title=card.name,
-            colour=Color(0x7289da),
+            colour=self.card_get_color(card),
             url=f"http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid={card.multiverse_id}"
         )
         last_set = card.printings[-1]
@@ -158,7 +175,7 @@ class CARDBOT:
 
             embd = Embed(
                 title=card.name,
-                colour=Color(0x7289da),
+                colour=self.card_get_color(card),
                 url=f"http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid={card.multiverse_id}"
             )
             if card.colors:
@@ -217,7 +234,7 @@ class CARDBOT:
                 await self.error(mobj.channel, "Something went wrong when getting all of the information. Here's the image instead.")
                 embd = Embed(
                     title=card.name,
-                    colour=Color(0x7289da),
+                    colour=self.card_get_color(card),
                     url=f"http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid={card.multiverse_id}"
                 )
                 last_set = card.printings[-1]

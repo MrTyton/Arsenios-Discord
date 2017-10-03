@@ -2,10 +2,8 @@ from Bot import ChatBot
 import pickle
 from asyncio import Lock
 from discord import Embed, Color
-from random import choice
 from os.path import isfile
 from pathlib import Path
-from collections import defaultdict
 
 
 class QUOTEBOT:
