@@ -7,10 +7,12 @@
 aiohttp==1.0.5            # via discord.py, pyanimelist
 async-timeout==1.4.0      # via aiohttp
 beautifulsoup4==4.6.0
-bs4==0.0.1
+bs4==0.0.1                # via pyanimelist
 chardet==3.0.4            # via aiohttp
 dicttoxml==1.7.4          # via pyanimelist
 discord.py==0.16.7
+discord==0.0.2
+feedparser==5.2.1
 inflect==0.2.5
 lxml==4.0.0               # via pyanimelist
 mtgsdk==1.3.1
