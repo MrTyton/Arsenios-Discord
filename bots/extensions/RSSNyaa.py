@@ -1,7 +1,5 @@
 from Bot import ChatBot
 from discord import Embed, Color
-from requests import get
-from bs4 import BeautifulSoup as BS
 from datetime import timedelta, datetime
 from asyncio import ensure_future, sleep, Lock
 import re
