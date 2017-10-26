@@ -169,7 +169,7 @@ class RSSBOT():
         self.save_feeds()
         self.feedLock.release()
 
-    @ChatBot.action('[URL]')
+    @ChatBot.action('[SEARCH TERMS]')
     async def rssadd(self, args, mobj):
         """
         Adds a nyaa RSS search term feed to your tracker.
@@ -180,19 +180,22 @@ class RSSBOT():
 
         This will send you a private message when an item updates.
         """
+        if len(args) < 1:
+            return await self.error(mobj.channel, "Need search terms.")
         await self.RSSaddInternal(args, mobj)
 
         await self.message(mobj.channel, "You are now tracking that feed.")
 
     async def removeInternal(self, args, mobj):
         await self.feedLock.acquire()
-        if mobj.author in self.feeds:
-            if tuple(args) in self.feeds[mobj.author]:
-                del self.feeds[mobj.author][tuple(args)]
+        if mobj.author in self.feeds and tuple(args) in self.feeds[mobj.author]:
+            del self.feeds[mobj.author][tuple(args)]
+            await self.bot.message(mobj.author, f"Removed `{' '.join(args)}` from your tracker.")
+        else:
+            await self.bot.error(mobj.author, "This feed is not in your tracker. Please use `!rsslist` to find out which feeds are in your tracker and copy from there.")
         self.feedLock.release()
-        await self.bot.message(mobj.author, f"Removed `{' '.join(args)}` from your tracker.")
 
-    @ChatBot.action('[URL]')
+    @ChatBot.action('[SEARCH TERMS]')
     async def rssremove(self, args, mobj):
         """
         Removes an RSS feed from your tracker.
@@ -201,13 +204,10 @@ class RSSBOT():
 
     async def listInternal(self, args, mobj):
         await self.feedLock.acquire()
-        if mobj.author in self.feeds:
-            if self.feeds[mobj.author]:
-                await self.bot.message(mobj.author, 'You are tracking the following feeds:\n```{}```'.format("\n".join([" ".join(x) for x in self.feeds[mobj.author].keys()])))
-            else:
-                await self.bot.message(mobj.author, 'You are not tracking anything.')
+        if mobj.author in self.feeds and self.feeds[mobj.author]:
+            await self.bot.message(mobj.author, 'You are tracking the following feeds:\n```{}```'.format("\n".join([" ".join(x) for x in self.feeds[mobj.author].keys()])))
         else:
-            await self.bot.message(mobj.author, 'You are not tracking anything.')
+            await self.bot.error(mobj.author, 'You are not tracking anything.')
         self.feedLock.release()
 
     @ChatBot.action()
