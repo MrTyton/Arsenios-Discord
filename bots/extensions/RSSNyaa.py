@@ -191,6 +191,7 @@ class RSSBOT():
         if mobj.author in self.feeds and tuple(args) in self.feeds[mobj.author]:
             del self.feeds[mobj.author][tuple(args)]
             await self.bot.message(mobj.author, f"Removed `{' '.join(args)}` from your tracker.")
+            self.save_feeds()
         else:
             await self.bot.error(mobj.author, "This feed is not in your tracker. Please use `!rsslist` to find out which feeds are in your tracker and copy from there.")
         self.feedLock.release()
