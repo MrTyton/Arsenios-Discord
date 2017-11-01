@@ -101,8 +101,8 @@ class RANDOMBOT():
         Turn a message into a 'poll' with up/down thumbs
         Example: !poll should polling be a feature?
         """
-        await self.client.add_reaction(mobj, 'ðŸ‘')
-        await self.client.add_reaction(mobj, 'ðŸ‘Ž')
+        await self.client.add_reaction(mobj, '👍')
+        await self.client.add_reaction(mobj, '👎')
         return
 
 
