@@ -35,7 +35,7 @@ class REACTIONBOT():
             join(Path(f'{self.bot.PICTURE_FOLDER}'), f))])
         for cur in folders:
             def registering(selfie, args, mobj): return selfie.client.send_file(
-                mobj.channel, selfie.get_images(f'{mobj.content[1:]}'))
+                mobj.channel, selfie.get_images(f'{mobj.content.split(" ")[0][1:]}'))
             registering.__doc__ = f"""
         Posts a {cur} reaction.
         """
