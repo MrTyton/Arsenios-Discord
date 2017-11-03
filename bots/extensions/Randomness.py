@@ -105,7 +105,7 @@ class RANDOMBOT():
         await self.client.add_reaction(mobj, '👍')
         await self.client.add_reaction(mobj, '👎')
         return
-
+        
     @ChatBot.action('[String]')
     async def xkcd(self, args, mobj):
         """
@@ -113,9 +113,9 @@ class RANDOMBOT():
         """
         try:
             xkcd_url = [x for x in search(f"site:xkcd.com -forums -wiki -blog {' '.join(args)}", num=1, start=0, stop=1)][0]
-            await self.message(mobj.channel, f"{xkcd_url}")
-        except BaseException:
-            self.error(mobj.channel, "Nothing Found")
+            await self.message(mobj.channel, f"{xkcd_url.replace('m.', '')}")
+        except: 
+            await self.error(mobj.channel, "Nothing Found")
 
 
 def setup(bot):
