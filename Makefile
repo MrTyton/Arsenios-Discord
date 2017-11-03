@@ -11,3 +11,5 @@ test:
 	sh tests.sh
 copy_keys:
 	scp -r keys steve@alarmpi:~/discord-bots
+kill:
+	kill $$(ps aux | grep rack | grep discord-config.json | awk '{print $$2}')
