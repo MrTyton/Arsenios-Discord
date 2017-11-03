@@ -134,7 +134,7 @@ class TOURNAMENTBOT:
 
                     cur['players'] -= dropcheck
                     cur['dropped'].update(drop_parse)
-                    
+
                     embed = Embed(
                         title=f"{cur['title']} Round {cur['round']-1}",
                         colour=Color(0x7289da),
@@ -205,7 +205,7 @@ class TOURNAMENTBOT:
         """
         try:
             resp = get(url)
-        except:
+        except BaseException:
             return None
         if resp.status_code != 200:
             return None
@@ -244,14 +244,14 @@ class TOURNAMENTBOT:
             url = f"{base}/round-{current_round}-{typer}-{d.strftime('%Y-%m-%d')}"
             try:
                 resp = get(url)
-            except:
+            except BaseException:
                 return None
             if resp.status_code != 200:
                 return None
         elif "starcity" in base:
             try:
                 resp = get(base)
-            except:
+            except BaseException:
                 return None
             if resp.status_code != 200:
                 return None

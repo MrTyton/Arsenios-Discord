@@ -188,7 +188,8 @@ class RSSBOT():
 
     async def removeInternal(self, args, mobj):
         await self.feedLock.acquire()
-        if mobj.author in self.feeds and tuple(args) in self.feeds[mobj.author]:
+        if mobj.author in self.feeds and tuple(
+                args) in self.feeds[mobj.author]:
             del self.feeds[mobj.author][tuple(args)]
             await self.bot.message(mobj.author, f"Removed `{' '.join(args)}` from your tracker.")
             self.save_feeds()
