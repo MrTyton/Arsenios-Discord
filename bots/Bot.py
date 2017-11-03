@@ -278,7 +278,7 @@ class ChatBot(Bot):
     def event_message(self):
         "Change this to change overall on message behavior"
         async def on_message(msg):
-            if str(msg.author) == "Arsenios#2244": return await self.process_message(msg)
+            if str(msg.author) == str(self.client.user): return await self.process_message(msg)
             args = msg.content.strip().split(" ")
             key = args.pop(0).lower()  # messages sent can't be empty
             if key in self.ACTIONS:
