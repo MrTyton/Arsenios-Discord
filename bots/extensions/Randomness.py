@@ -3,6 +3,7 @@ from random import randint, choice
 from Bot import ChatBot
 from os.path import isfile
 from pathlib import Path
+from google import search
 
 
 class RANDOMBOT():
@@ -104,6 +105,17 @@ class RANDOMBOT():
         await self.client.add_reaction(mobj, '👍')
         await self.client.add_reaction(mobj, '👎')
         return
+        
+    @ChatBot.action('[String]')
+    async def xkcd(self, args, mobj):
+        """
+        Returns the most likely xkcd to be referenced by the keywords
+        """
+        try:
+            xkcd_url = [x for x in search(f"site:xkcd.com -forums -wiki -blog {' '.join(args)}", num=1, start=0, stop=1)][0]
+            await self.message(mobj.channel, f"{xkcd_url}")
+        except: 
+            self.error(mobj.channel, "Nothing Found")
 
 
 def setup(bot):
