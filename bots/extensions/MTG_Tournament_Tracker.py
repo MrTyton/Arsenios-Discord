@@ -134,7 +134,7 @@ class TOURNAMENTBOT:
 
                     cur['players'] -= dropcheck
                     cur['dropped'].update(drop_parse)
-
+                    
                     embed = Embed(
                         title=f"{cur['title']} Round {cur['round']-1}",
                         colour=Color(0x7289da),
@@ -203,7 +203,10 @@ class TOURNAMENTBOT:
         """
         Parses the provided url to get the player objects.
         """
-        resp = get(url)
+        try:
+            resp = get(url)
+        except:
+            return None
         if resp.status_code != 200:
             return None
         bs = BS(resp.text, 'html.parser')
@@ -238,12 +241,18 @@ class TOURNAMENTBOT:
     def generate_url(self, base, current_round, typer='standings'):
         if "wizards" in base:
             d = date.today()
-            url = f"{base}round-{current_round}-{typer}-{d.strftime('%Y-%m-%d')}"
-            resp = get(url)
+            url = f"{base}/round-{current_round}-{typer}-{d.strftime('%Y-%m-%d')}"
+            try:
+                resp = get(url)
+            except:
+                return None
             if resp.status_code != 200:
                 return None
         elif "starcity" in base:
-            resp = get(base)
+            try:
+                resp = get(base)
+            except:
+                return None
             if resp.status_code != 200:
                 return None
             bs = BS(resp.text, 'html.parser')
