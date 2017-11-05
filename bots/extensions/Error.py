@@ -12,10 +12,11 @@ class ERRORBOT:
         if isfile(Path(
                 self.bot.DATA_FOLDER,
                 f'{self.bot.name}.error.png')):
-            await self.bot.client.send_file(channel, Path(
+            return await self.bot.client.send_file(channel, Path(
                 self.bot.DATA_FOLDER,
-                f'{self.bot.name}.error.png'))
-        return await self.bot.message(channel, message)
+                f'{self.bot.name}.error.png'), content=message)
+        else:
+            return await self.bot.message(channel, message)
 
 
 def setup(bot):
