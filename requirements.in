@@ -7,3 +7,4 @@ feedparser==5.2.1
 beautifulsoup4==4.6.0
 discord==0.0.2
 google==1.9.3
+strawpy==1.1
