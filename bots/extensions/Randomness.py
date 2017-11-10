@@ -97,22 +97,24 @@ class RANDOMBOT():
             return await self.message(mobj.channel, "Invalid spam input")
         y = args * randint(5, min(max_length, 20))
         return await self.message(mobj.channel, f"{' '.join(y)}")
-        
+
     @ChatBot.action('[String]')
     async def xkcd(self, args, mobj):
         """
         Returns the most likely xkcd to be referenced by the keywords
         """
-        try:
-            xkcd_url = [x for x in search(f"site:xkcd.com -forums -wiki -blog {' '.join(args)}", num=1, start=0, stop=1)][0]
-            await self.message(mobj.channel, f"{xkcd_url.replace('m.', '')}")
-        except: 
-            await self.error(mobj.channel, "Nothing Found")
+        xkcd_url = next(search(f"site:xkcd.com -forums -wiki -blog {' '.join(args)}", num=1, start=0, stop=1), None)
+
+        if xkcd_url:
+            return await self.message(mobj.channel, f"{xkcd_url.replace('m.', '')}")
+        else:
+            return await self.error(mobj.channel, "Nothing Found")
 
     @ChatBot.action('[Title] = [Option 1] | [Option 2]...')
     async def poll(self, args, mobj):
         """
         Create a strawpoll.
+        Format is Title = Options | Separated | By | These things
         Example: !poll Favorite color = Blue | Red | Green
         """
         args = " ".join(args)
@@ -124,11 +126,12 @@ class RANDOMBOT():
                 options[0] = options[0].strip()
             else:
                 title = f'Poll by {mobj.author.name}'
-        except:
+        except BaseException:
             return await self.error(mobj.channel, 'Invalid Syntax.')
 
         poll = await loop.run_in_executor(None, strawpy.create_poll, title.strip(), options)
         await self.message(mobj.channel, f"{poll.url}")
+
 
 def setup(bot):
     RANDOMBOT(bot)

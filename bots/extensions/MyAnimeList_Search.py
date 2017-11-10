@@ -5,6 +5,7 @@ from discord import Embed, Color
 from json import load as jload
 from pathlib import Path
 from utils import unescape
+import google
 
 
 class MALBOT:
@@ -12,11 +13,15 @@ class MALBOT:
     def __init__(self, bot):
         self.bot = bot
         user, password = self.read_mal()
-        self.bot.pyanimelist = PyAnimeList(
+        self.pyanimelist = PyAnimeList(
             username=user,
             password=password,
             user_agent="Arsenios_Bot"
         )
+        self.pylist_options = {
+            'anime': self.pyanimelist.search_all_anime,
+            'manga': self.pyanimelist.search_all_manga}
+        self.bot.mal_get_options = self.get_options
 
     def read_mal(self):
         """
@@ -32,32 +37,34 @@ class MALBOT:
             return user, password
         return None
 
-    @ChatBot.action("[String]")
-    async def anime(self, args, mobj):
-
-        """
-        Does a MAL search to find requested anime. If there is more than 1 option, will ask up to the first 15 choices. You have 10 seconds to respond.
-        """
-
+    async def get_options(self, type, search, mobj, recur=False):
         author = mobj.author
         try:
-            animes = await self.pyanimelist.search_all_anime(f"{' '.join(args)}")
+            results = await self.pylist_options[type](f"{' '.join(search)}")
         except BaseException:
-            return await self.error(mobj.channel, "Cannot find anything")
+            if not recur:
+                await self.bot.message(mobj.channel, "Cannot find anything, performing google search to check for mispellings...")
+                results = google.search(f"site:myanimelist.net {' '.join(search)} {type}", num=1, start=0, stop=1)
+                mispell = next(results, None)
+                if mispell:
+                    return await self.get_options(type, mispell.split("/")[-1].split("_"), mobj, recur=True)
+            await self.bot.error(mobj.channel, "Could not find anything.")
+            return None
 
-        animes_ = dict(enumerate(animes[:15]))
-        if len(animes_) > 1:
-            message = "```What anime would you like:\n"
-            for anime in animes_.items():
+        results_ = dict(enumerate(results[:15]))
+        if len(results_) > 1:
+            message = "```What {} would you like:\n".format(type)
+            for result in results_.items():
 
-                message += "[{}] {}\n".format(str(anime[0] + 1),
-                                              anime[1].title)
+                message += "[{}] {}\n".format(str(result[0] + 1),
+                                              result[1].title)
 
-            message += "\nUse the number to the side of the anime as a key to select it!```"
+            message += "\nUse the number to the side of the {} as a key to select it!```".format(
+                type)
 
-            await self.message(mobj.channel, message)
+            await self.bot.message(mobj.channel, message)
 
-            msg = await self.client.wait_for_message(timeout=10.0, author=author)
+            msg = await self.bot.client.wait_for_message(timeout=10.0, author=author)
 
             if not msg:
                 return
@@ -66,9 +73,23 @@ class MALBOT:
         else:
             key = 0
         try:
-            anime = animes_[key]
+            result = results_[key]
         except (ValueError, KeyError):
-            return await self.error(mobj.channel, "Invalid key.")
+            await self.bot.error(mobj.channel, "Invalid key.")
+            return None
+        return result
+
+    @ChatBot.action("[String]")
+    async def anime(self, args, mobj):
+
+        """
+        Does a MAL search to find requested anime. If there is more than 1 option, will ask up to the first 15 choices. You have 10 seconds to respond.
+        """
+
+        anime = await self.mal_get_options('anime', args, mobj)
+
+        if not anime:
+            return
 
         embed = Embed(
             title=anime.title,
@@ -89,7 +110,7 @@ class MALBOT:
                 "\n\n",
                 maxsplit=1)[0])
 
-        await self.embed(mobj.channel, embed)
+        return await self.embed(mobj.channel, embed)
 
     @ChatBot.action("[String]")
     async def manga(self, args, mobj):
@@ -98,36 +119,11 @@ class MALBOT:
         Does a MAL search to find requested manga. If there is more than 1 option, will ask up to the first 15 choices. You have 10 seconds to respond.
         """
 
-        author = mobj.author
-        try:
-            mangas = await self.pyanimelist.search_all_manga(f"{' '.join(args)}")
-        except BaseException:
-            return await self.error(mobj.channel, "Cannot find anything")
+        manga = await self.mal_get_options('manga', args, mobj)
 
-        mangas_ = dict(enumerate(mangas[:15]))
-        if len(mangas_) > 1:
-            message = "```What manga would you like:\n"
-            for manga in mangas_.items():
+        if not manga:
+            return
 
-                message += "[{}] {}\n".format(str(manga[0] + 1),
-                                              manga[1].title)
-
-            message += "\nUse the number to the side of the manga as a key to select it!```"
-
-            await self.message(mobj.channel, message)
-
-            msg = await self.client.wait_for_message(timeout=10.0, author=author)
-
-            if not msg:
-                return
-
-            key = int(msg.content) - 1
-        else:
-            key = 0
-        try:
-            manga = mangas_[key]
-        except (ValueError, KeyError):
-            return await self.error(mobj.channel, "Invalid key.")
         embed = Embed(
             title=manga.title,
             colour=Color(0x7289da),
@@ -150,7 +146,7 @@ class MALBOT:
                 "\n\n",
                 maxsplit=1)[0])
 
-        await self.embed(mobj.channel, embed)
+        return await self.embed(mobj.channel, embed)
 
 
 def setup(bot):
