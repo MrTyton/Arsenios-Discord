@@ -4,6 +4,8 @@ from Bot import ChatBot
 from os.path import isfile
 from pathlib import Path
 from google import search
+import strawpy
+import asyncio
 
 
 class RANDOMBOT():
@@ -95,16 +97,6 @@ class RANDOMBOT():
             return await self.message(mobj.channel, "Invalid spam input")
         y = args * randint(5, min(max_length, 20))
         return await self.message(mobj.channel, f"{' '.join(y)}")
-
-    @ChatBot.action('<Poll Query>')
-    async def poll(self, args, mobj):
-        """
-        Turn a message into a 'poll' with up/down thumbs
-        Example: !poll should polling be a feature?
-        """
-        await self.client.add_reaction(mobj, '👍')
-        await self.client.add_reaction(mobj, '👎')
-        return
         
     @ChatBot.action('[String]')
     async def xkcd(self, args, mobj):
@@ -117,6 +109,26 @@ class RANDOMBOT():
         except: 
             await self.error(mobj.channel, "Nothing Found")
 
+    @ChatBot.action('[Title] = [Option 1] | [Option 2]...')
+    async def poll(self, args, mobj):
+        """
+        Create a strawpoll.
+        Example: !poll Favorite color = Blue | Red | Green
+        """
+        args = " ".join(args)
+        loop = asyncio.get_event_loop()
+        try:
+            options = [op.strip() for op in args.split('|')]
+            if '=' in options[0]:
+                title, options[0] = options[0].split('=')
+                options[0] = options[0].strip()
+            else:
+                title = f'Poll by {mobj.author.name}'
+        except:
+            return await self.error(mobj.channel, 'Invalid Syntax.')
+
+        poll = await loop.run_in_executor(None, strawpy.create_poll, title.strip(), options)
+        await self.message(mobj.channel, f"{poll.url}")
 
 def setup(bot):
     RANDOMBOT(bot)
