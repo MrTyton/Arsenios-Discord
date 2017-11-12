@@ -113,7 +113,7 @@ class MALBOT:
                     "\n")]
             else:
                 anime.synopsis = anime.synopsis[:965]
-        anime.synopsis += "\nIncomplete synopsis due to length."
+            anime.synopsis += "\nIncomplete synopsis due to length."
         embed.add_field(
             name="Synopsis",
             value=anime.synopsis)
@@ -159,7 +159,7 @@ class MALBOT:
                     "\n")]
             else:
                 manga.synopsis = manga.synopsis[:965]
-        manga.synopsis += "\nIncomplete synopsis due to length."
+            manga.synopsis += "\nIncomplete synopsis due to length."
 
         embed.add_field(
             name="Synopsis",
