@@ -13,3 +13,5 @@ copy_keys:
 	scp -r keys steve@alarmpi:~/discord-bots
 kill:
 	kill $$(ps aux | grep rack | grep discord-config.json | awk '{print $$2}')
+format:
+	autopep8 -i -r bots/ -aa -vv
