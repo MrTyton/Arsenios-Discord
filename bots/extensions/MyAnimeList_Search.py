@@ -103,14 +103,24 @@ class MALBOT:
         embed.add_field(
             name="Dates",
             value=f'{anime.start_date} through {anime.end_date if anime.end_date != "0000-00-00" else "present"}' if anime.start_date != anime.end_date else f'{anime.start_date}')
+        anime.synopsis = unescape(
+            anime.synopsis).split(
+            "\n\n",
+                maxsplit=1)[0]
+        if len(anime.synopsis) > 1000:
+            if "\n" in anime.synopsis[:974]:
+                anime.synopsis = anime.synopsis[:anime.synopsis[:974].rfind(
+                    "\n")]
+            else:
+                anime.synopsis = anime.synopsis[:974]
+        anime.synopsis += "\nSynopsis length too long."
         embed.add_field(
             name="Synopsis",
-            value=unescape(
-                anime.synopsis).split(
-                "\n\n",
-                maxsplit=1)[0])
-
-        return await self.embed(mobj.channel, embed)
+            value=anime.synopsis)
+        try:
+            await self.embed(mobj.channel, embed)
+        except BaseException:
+            await self.error(mobj.channel, "Something when trying to format the object. Here is a link to the anime: " + "https://myanimelist.net/anime/{0.id}/{0.title}".format(anime).replace(" ", "%20"))
 
     @ChatBot.action("[String]")
     async def manga(self, args, mobj):
@@ -139,6 +149,15 @@ class MALBOT:
         embed.add_field(
             name="Dates",
             value=f'{manga.start_date} through {manga.end_date if manga.end_date != "0000-00-00" else "present"}' if manga.start_date != manga.end_date else f'{manga.start_date}')
+
+        if len(manga.synopsis) > 1000:
+            if "\n" in manga.synopsis[:974]:
+                manga.synopsis = manga.synopsis[:manga.synopsis[:974].rfind(
+                    "\n")]
+            else:
+                manga.synopsis = manga.synopsis[:974]
+        manga.synopsis += "\nSynopsis length too long."
+
         embed.add_field(
             name="Synopsis",
             value=unescape(
@@ -146,7 +165,10 @@ class MALBOT:
                 "\n\n",
                 maxsplit=1)[0])
 
-        return await self.embed(mobj.channel, embed)
+        try:
+            await self.embed(mobj.channel, embed)
+        except BaseException:
+            await self.error(mobj.channel, "Something when trying to format the object. Here is a link to the manga: " + "https://myanimelist.net/manga/{0.id}/{0.title}".format(manga).replace(" ", "%20"))
 
 
 def setup(bot):
