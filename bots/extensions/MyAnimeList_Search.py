@@ -108,12 +108,12 @@ class MALBOT:
             "\n\n",
                 maxsplit=1)[0]
         if len(anime.synopsis) > 1000:
-            if "\n" in anime.synopsis[:974]:
-                anime.synopsis = anime.synopsis[:anime.synopsis[:974].rfind(
+            if "\n" in anime.synopsis[:965]:
+                anime.synopsis = anime.synopsis[:anime.synopsis[:965].rfind(
                     "\n")]
             else:
-                anime.synopsis = anime.synopsis[:974]
-        anime.synopsis += "\nSynopsis length too long."
+                anime.synopsis = anime.synopsis[:965]
+        anime.synopsis += "\nIncomplete synopsis due to length."
         embed.add_field(
             name="Synopsis",
             value=anime.synopsis)
@@ -149,21 +149,21 @@ class MALBOT:
         embed.add_field(
             name="Dates",
             value=f'{manga.start_date} through {manga.end_date if manga.end_date != "0000-00-00" else "present"}' if manga.start_date != manga.end_date else f'{manga.start_date}')
-
+        manga.synopsis = unescape(
+            manga.synopsis).split(
+            "\n\n",
+                maxsplit=1)[0]
         if len(manga.synopsis) > 1000:
-            if "\n" in manga.synopsis[:974]:
-                manga.synopsis = manga.synopsis[:manga.synopsis[:974].rfind(
+            if "\n" in manga.synopsis[:965]:
+                manga.synopsis = manga.synopsis[:manga.synopsis[:965].rfind(
                     "\n")]
             else:
-                manga.synopsis = manga.synopsis[:974]
-        manga.synopsis += "\nSynopsis length too long."
+                manga.synopsis = manga.synopsis[:965]
+        manga.synopsis += "\nIncomplete synopsis due to length."
 
         embed.add_field(
             name="Synopsis",
-            value=unescape(
-                manga.synopsis).split(
-                "\n\n",
-                maxsplit=1)[0])
+            value=manga.synopsis)
 
         try:
             await self.embed(mobj.channel, embed)
