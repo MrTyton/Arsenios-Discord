@@ -1,11 +1,13 @@
-
+from discord import Embed, Color
 from random import randint, choice
 from Bot import ChatBot
 from os.path import isfile
 from pathlib import Path
-from google import search
+from google.google import search
 import strawpy
 import asyncio
+import xkcd
+import re
 
 
 class RANDOMBOT():
@@ -103,12 +105,31 @@ class RANDOMBOT():
         """
         Returns the most likely xkcd to be referenced by the keywords
         """
-        xkcd_url = next(search(f"site:xkcd.com -forums -wiki -blog {' '.join(args)}", num=1, start=0, stop=1), None)
 
-        if xkcd_url:
-            return await self.message(mobj.channel, f"{xkcd_url.replace('m.', '')}")
-        else:
+        xkcd_urls = search(f"site:xkcd.com -forums -wiki -blog {' '.join(args)}", 3)
+        match = False
+        for i, cur in enumerate(xkcd_urls):
+            id = re.match(r"https://[\.m]*xkcd.com/(\d*)/", cur.link)
+            if id:
+                match = True
+                break
+        if not match:
             return await self.error(mobj.channel, "Nothing Found")
+
+        comic = xkcd.getComic(int(id.group(1)))
+
+        if comic == -1:
+            return await self.error(mobj.channel, "Nothing Found")
+
+        embed = Embed(
+            title=comic.getTitle(),
+            url=f"https://xkcd.com/{id.group(1)}",
+            colour=Color(0x7289da)
+        )
+        embed.set_image(url=comic.getImageLink())
+        embed.add_field(name="Alt-Text", value=comic.getAltText())
+        embed.add_field(name="Explanation", value=f"[Link]({comic.getExplanation()})")
+        return await self.embed(mobj.channel, embed)
 
     @ChatBot.action('[Title] = [Option 1] | [Option 2]...')
     async def poll(self, args, mobj):

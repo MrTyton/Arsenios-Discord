@@ -5,7 +5,7 @@ from discord import Embed, Color
 from json import load as jload
 from pathlib import Path
 from utils import unescape
-import google
+from google import google
 
 
 class MALBOT:
@@ -44,10 +44,9 @@ class MALBOT:
         except BaseException:
             if not recur:
                 await self.bot.message(mobj.channel, "Cannot find anything, performing google search to check for mispellings...")
-                results = google.search(f"site:myanimelist.net {' '.join(search)} {type}", num=1, start=0, stop=1)
-                mispell = next(results, None)
+                mispell = google.search(f"site:myanimelist.net {' '.join(search)} {type}", 1)
                 if mispell:
-                    return await self.get_options(type, mispell.split("/")[-1].split("_"), mobj, recur=True)
+                    return await self.get_options(type, mispell[0].link.split("/")[-1].split("_"), mobj, recur=True)
             await self.bot.error(mobj.channel, "Could not find anything.")
             return None
 
@@ -67,7 +66,8 @@ class MALBOT:
             msg = await self.bot.client.wait_for_message(timeout=10.0, author=author)
 
             if not msg:
-                return
+                await self.bot.error(mobj.channel, "Operation has timed out, please try again.")
+                return None
 
             key = int(msg.content) - 1
         else:

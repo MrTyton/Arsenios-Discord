@@ -66,6 +66,7 @@ class CARDBOT:
             msg = await self.bot.client.wait_for_message(timeout=10.0, author=author)
 
             if not msg:
+                await self.bot.error(mobj.channel, "Operation has timed out, please try again.")
                 return None
 
             key = int(msg.content) - 1
