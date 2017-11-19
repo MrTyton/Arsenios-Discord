@@ -269,7 +269,11 @@ class TOURNAMENTBOT:
 
     def check_drops(self, base, players, current_round):
         url = self.generate_url(base, current_round, typer='pairings')
+        if not url:
+            return None
         active_players = self.parse_url(url, players)
+        if not active_players:
+            return None
         active_players = set(
             cur.find_all('td')[1].get_text() for cur in active_players) | set(
             cur.find_all('td')[4].get_text() for cur in active_players)
