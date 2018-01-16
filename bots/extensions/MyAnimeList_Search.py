@@ -38,10 +38,14 @@ class MALBOT:
         return None
 
     async def get_options(self, type, search, mobj, recur=False):
+        
         author = mobj.author
         try:
             results = await self.pylist_options[type](f"{' '.join(search)}")
-        except BaseException:
+            if len(results) == 0:
+                raise BaseException("Not returning anything?")
+        except BaseException as e:
+            print(e)
             if not recur:
                 await self.bot.message(mobj.channel, "Cannot find anything, performing google search to check for mispellings...")
                 mispell = google.search(f"site:myanimelist.net {' '.join(search)} {type}", 1)
@@ -51,6 +55,9 @@ class MALBOT:
             return None
 
         results_ = dict(enumerate(results[:15]))
+        if len(results_) == 0:
+            await self.bot.error(mobj.channel, "Could not find anything.")
+            return None
         if len(results_) > 1:
             message = "```What {} would you like:\n".format(type)
             for result in results_.items():
@@ -85,7 +92,7 @@ class MALBOT:
         """
         Does a MAL search to find requested anime. If there is more than 1 option, will ask up to the first 15 choices. You have 10 seconds to respond.
         """
-
+        print(args)
         anime = await self.mal_get_options('anime', args, mobj)
 
         if not anime:

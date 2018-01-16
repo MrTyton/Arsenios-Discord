@@ -2,7 +2,11 @@
 from Bot import ChatBot
 from discord import Embed, Color
 from mtgsdk import Card
-
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=UserWarning)
+    from fuzzywuzzy import fuzz
+from collections import OrderedDict
 
 class CARDBOT:
 
@@ -48,12 +52,15 @@ class CARDBOT:
                 cards_[a] = cur
                 a += 1
                 entered.append(cur.name)
-                if len(entered) >= 15:
+                if len(entered) >= 50:
                     break
         if len(cards_) == 0:
             await self.bot.error(mobj.channel, "No cards found.")
             return None
         if len(cards_) > 1:
+            order = sorted(cards_.values(), key = lambda x : fuzz.ratio(" ".join(args), x.name), reverse=True)[:15]
+            cards_ = OrderedDict([(i,v) for i,v in enumerate(order)])
+            
             message = "```What card would you like:\n"
             for anime in cards_.items():
 
@@ -68,8 +75,11 @@ class CARDBOT:
             if not msg:
                 await self.bot.error(mobj.channel, "Operation has timed out, please try again.")
                 return None
-
-            key = int(msg.content) - 1
+            try:
+                key = int(msg.content) - 1
+            except:
+                await self.bot.error(mobj.channel, "Invalid Key")
+                return None
         else:
             key = 0
 

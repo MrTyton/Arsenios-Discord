@@ -68,7 +68,7 @@ class RANDOMBOT():
                 return await self.error(mobj.channel, "Non-numeric args given.")
             if int(dice) > 100 or int(dice) < 1 or int(
                     sides) > 1000 or int(sides) < 1:
-                return await self.message(mobj.channel, "Invalid Argument Range")
+                return await self.error(mobj.channel, "Invalid Argument Range")
             for i in range(int(dice)):
                 ans.append(randint(1, int(sides)))
             summation = sum(ans)
