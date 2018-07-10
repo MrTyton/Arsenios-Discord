@@ -134,13 +134,13 @@ class RANDOMBOT():
                         value=f"[Link]({comic.getExplanation()})")
         return await self.embed(mobj.channel, embed)
 
-    @ChatBot.action('[Title] = [Option 1] | [Option 2]...')
+    """@ChatBot.action('[Title] = [Option 1] | [Option 2]...')
     async def poll(self, args, mobj):
-        """
+        
         Create a strawpoll.
         Format is Title = Options | Separated | By | These things
         Example: !poll Favorite color = Blue | Red | Green
-        """
+        
         args = " ".join(args)
         loop = asyncio.get_event_loop()
         try:
@@ -159,7 +159,7 @@ class RANDOMBOT():
         print("Hi2")
         print(options)
         print(title)
-        # await self.message(mobj.channel, f"{poll.url}")
+        # await self.message(mobj.channel, f"{poll.url}")"""
 
 
 def setup(bot):

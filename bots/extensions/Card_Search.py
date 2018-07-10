@@ -8,7 +8,6 @@ with warnings.catch_warnings():
     from fuzzywuzzy import fuzz
 from collections import OrderedDict
 
-
 class CARDBOT:
 
     def __init__(self, bot):
@@ -147,6 +146,7 @@ class CARDBOT:
             card = await self.get_card(args, mobj)
             if not card:
                 return
+            #this will bug in PMs
             if mobj.server.id not in self.magic_dict:
                 magic_emojis = {}
                 for cur in mobj.server.emojis:
@@ -256,7 +256,7 @@ class CARDBOT:
                 embd.set_image(url=latest_picture.image_url)
 
                 return await self.embed(mobj.channel, embd)
-        except BaseException:
+        except Exception as e:
             await self.error(mobj.channel, "Something went wrong when getting the card, unsure what.")
 
 
