@@ -97,7 +97,6 @@ class CARDBOT:
         If there are multiple cards with similar name, will prompt to select one.
         Displays only the picture of the card. For full information use !cardfull
         """
-
         card = await self.get_card(args, mobj)
         if not card:
             return

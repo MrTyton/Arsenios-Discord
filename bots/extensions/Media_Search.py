@@ -90,21 +90,24 @@ class MEDIABOT():
                 date = container.find(
                     "td", attrs={
                         "data-timestamp": True}).text
-                if "magnet" in hrefs[2 + locator]['href']:
-                    magnet = hrefs[2 + locator]['href']
+                try:
+                    torrent = [x['href'] for x in hrefs if '/download/' in x['href']][0]
+                except:
                     torrent = None
-                else:
-                    torrent = f"https://nyaa.si/{hrefs[2+locator]['href']}"
-                    magnet = hrefs[3 + locator]['href']
+                try:
+                    magnet = [x['href'] for x in hrefs if 'magnet:?' in x['href']][0]
+                except:
+                    magnet = None
+                
                 embd = Embed(
                     title=the_title,
                     color=Color(0x7289da),
                     url=f"{link}",
                 )
                 if torrent:
-                    link_string = f"[Magnet]({magnet}), [Torrent]({torrent})"
+                    link_string = f"[Torrent](http://nyaa.si{torrent})"#f"[Magnet](http://nyaa.si{magnet}), [Torrent](http://nyaa.si{torrent})"
                 else:
-                    link_string = f"[Magnet]({magnet})"
+                    link_string = "No torrent found, only magnet. Please check the search for more info."#f"[Magnet]({magnet})"
                 embd.add_field(name="Links", value=link_string)
                 embd.add_field(name="Status",
                                value=f"{seeds} seeders, {leechers} leechers")

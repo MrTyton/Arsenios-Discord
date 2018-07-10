@@ -38,7 +38,6 @@ class MALBOT:
         return None
 
     async def get_options(self, type, search, mobj, recur=False):
-        
         author = mobj.author
         try:
             results = await self.pylist_options[type](f"{' '.join(search)}")

@@ -62,19 +62,24 @@ class ArseniosBot(ChatBot):
                 t = self.pre_text(
                     f'Help for \'{key}\':{self.ACTIONS[key].__doc__}')
                 return await self.message(mobj.author, t)
-        output = 'Thank you for choosing Arsenios™ for your channel\nIf you have any bug reports, please tell @MrTyton#5093\nIf you want to peek under the hood, go to https://github.com/MrTyton/Arsenios-Discord\n\n'
-        output += 'Here are the available commands\n'
-        output += '<> means that the input is optional, [] means that the input is required\n\n'
+        output = '<> means that the input is optional, [] means that the input is required\n\n'
         for k, g in groupby(self.ACTIONS.keys(),
                             key=lambda x: self.ACTIONS[x].__module__):
             if k == "__main__":
                 continue
             output += f'{k}:\n'.replace("extensions.",
                                         "").replace("_", " ").strip(" ")
+            addendum = ""
             for cur in g:
                 c = f'{cur}'
-                output += f'    {c} {self.HELPMSGS.get(c, "")}\n'
-        output += f'\nFor more info on each command, use \'{ChatBot.PREFIX}help command\''
+                msg = self.HELPMSGS.get(c, "")
+                if msg:
+                    output += f'    {c} {self.HELPMSGS.get(c, "")}\n'
+                else:
+                    addendum += f'{c}, '
+            if addendum:
+                output += f'    {addendum.strip(", ")}\n'
+        output += f'\nFor more info on each command, use \'{ChatBot.PREFIX}help command\'\nIf you have any bug reports, please tell @MrTyton#5093\nIf you want to peek under the hood, go to https://github.com/MrTyton/Arsenios-Discord'
         return await self.message(mobj.author, self.pre_text(output))
 
 

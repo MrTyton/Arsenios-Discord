@@ -149,9 +149,14 @@ class RANDOMBOT():
                 title = f'Poll by {mobj.author.name}'
         except BaseException:
             return await self.error(mobj.channel, 'Invalid Syntax.')
-
-        poll = await loop.run_in_executor(None, strawpy.create_poll, title.strip(), options)
-        await self.message(mobj.channel, f"{poll.url}")
+        print("Hi")
+        print(options)
+        print(title)
+        poll = strawpy.create_poll(title.strip(), options)
+        print("Hi2")
+        print(options)
+        print(title)
+        #await self.message(mobj.channel, f"{poll.url}")
 
 
 def setup(bot):

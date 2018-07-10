@@ -111,7 +111,7 @@ class TOURNAMENTBOT:
         """
         Sleeper thread. Checks every 5 minutes for tournament updates and then posts them to the respective channels.
         """
-        await sleep(5)
+        await sleep(30)
         while(True):
             await self.tournament_lock.acquire()
             tournaments = await self.load_tournaments()
@@ -153,7 +153,7 @@ class TOURNAMENTBOT:
                 parsed_page = self.parse_url(url, cur['players'])
                 if parsed_page == []:
                     cur['round'] += 1
-                    if cur['round'] == 16:
+                    if cur['round'] == 15:
                         removals.append(named_tourny)
                     continue
                 elif parsed_page is None:
@@ -162,7 +162,7 @@ class TOURNAMENTBOT:
 
                 if parsed_players == {}:
                     cur['round'] += 1
-                    if cur['round'] == 16:
+                    if cur['round'] == 15:
                         removals.append(named_tourny)
                     continue
 
@@ -197,7 +197,7 @@ class TOURNAMENTBOT:
             await self.save_tournaments(tournaments)
             self.tournament_lock.release()
 
-            await sleep(300)
+            await sleep(60)
 
     def parse_url(self, url, player_list):
         """

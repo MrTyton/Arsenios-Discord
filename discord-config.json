@@ -7,7 +7,7 @@
     "programs": [
         {
             "name": "Arsenios",
-            "program": "python",
+            "program": "/home/joshua/.virtualenvs/arsenios/bin/python",
             "args": [
                 "bots/arsenios.py"
             ]
