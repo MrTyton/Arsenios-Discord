@@ -73,7 +73,8 @@ class RANDOMBOT():
                 ans.append(randint(1, int(sides)))
             summation = sum(ans)
             res = "+".join(["".join(self.emojis[x] for x in str(y).zfill(len(str(y)))) for y in ans]) + \
-                "=" + "".join([self.emojis[x] for x in str(summation).zfill(len(str(summation)))])
+                "=" + "".join([self.emojis[x]
+                               for x in str(summation).zfill(len(str(summation)))])
         else:
             if not x.isnumeric():
                 return await self.error(mobj.channel, "Non-numeric arg given")
@@ -106,7 +107,8 @@ class RANDOMBOT():
         Returns the most likely xkcd to be referenced by the keywords
         """
 
-        xkcd_urls = search(f"site:xkcd.com -forums -wiki -blog {' '.join(args)}", 3)
+        xkcd_urls = search(
+            f"site:xkcd.com -forums -wiki -blog {' '.join(args)}", 3)
         match = False
         for i, cur in enumerate(xkcd_urls):
             id = re.match(r"https://[\.m]*xkcd.com/(\d*)/", cur.link)
@@ -128,7 +130,8 @@ class RANDOMBOT():
         )
         embed.set_image(url=comic.getImageLink())
         embed.add_field(name="Alt-Text", value=comic.getAltText())
-        embed.add_field(name="Explanation", value=f"[Link]({comic.getExplanation()})")
+        embed.add_field(name="Explanation",
+                        value=f"[Link]({comic.getExplanation()})")
         return await self.embed(mobj.channel, embed)
 
     @ChatBot.action('[Title] = [Option 1] | [Option 2]...')
@@ -156,7 +159,7 @@ class RANDOMBOT():
         print("Hi2")
         print(options)
         print(title)
-        #await self.message(mobj.channel, f"{poll.url}")
+        # await self.message(mobj.channel, f"{poll.url}")
 
 
 def setup(bot):

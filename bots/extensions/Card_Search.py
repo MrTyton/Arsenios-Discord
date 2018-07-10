@@ -8,6 +8,7 @@ with warnings.catch_warnings():
     from fuzzywuzzy import fuzz
 from collections import OrderedDict
 
+
 class CARDBOT:
 
     def __init__(self, bot):
@@ -58,9 +59,10 @@ class CARDBOT:
             await self.bot.error(mobj.channel, "No cards found.")
             return None
         if len(cards_) > 1:
-            order = sorted(cards_.values(), key = lambda x : fuzz.ratio(" ".join(args), x.name), reverse=True)[:15]
-            cards_ = OrderedDict([(i,v) for i,v in enumerate(order)])
-            
+            order = sorted(cards_.values(), key=lambda x: fuzz.ratio(
+                " ".join(args), x.name), reverse=True)[:15]
+            cards_ = OrderedDict([(i, v) for i, v in enumerate(order)])
+
             message = "```What card would you like:\n"
             for anime in cards_.items():
 

@@ -2,7 +2,6 @@ from Bot import ChatBot
 from discord import Embed, Color
 from datetime import timedelta, datetime
 from asyncio import ensure_future, sleep, Lock
-import re
 import feedparser
 import pickle
 from pathlib import Path

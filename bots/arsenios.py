@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import importlib
 from Bot import ChatBot
@@ -86,6 +86,5 @@ class ArseniosBot(ChatBot):
 if __name__ == "__main__":
     d = ArseniosBot("Arsenios")
     d.run()
-    pass
 
 # end
