@@ -5,6 +5,12 @@ import requests
 import difflib
 import traceback
 import re
+import sys, os
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=UserWarning)
+    from fuzzywuzzy import fuzz
+from collections import OrderedDict
 
 class AniList:
     def __init__(self):
@@ -47,36 +53,35 @@ class AniList:
         self.id_query = '''query ($id: Int) {
       Page {
         media(id: $id) {
-          id
-          title {
-            romaji
-            english
-            native
-          }
-          type
-          status
-          format
-          episodes
-          chapters
-          volumes
-          description
-          startDate {
-              year
-              month
-              day
-          }
-          endDate {
-              year
-              month
-              day
-          }
-          genres
-          synonyms
-          nextAiringEpisode {
-            airingAt
-            timeUntilAiring
-            episode
-          }
+      id
+      title {
+        romaji
+        english
+        native
+      }
+      type
+      status
+      format
+      episodes
+      chapters
+      volumes
+      description
+      startDate {
+          year
+          month
+          day
+      }
+      endDate {
+          year
+          month
+          day
+      }
+      genres
+      synonyms
+      coverImage {
+        large
+      }
+      isAdult
         }
       }
     }'''
@@ -179,7 +184,6 @@ class AniList:
             
             request = self.req.post(self.uri, json={ 'query': self.id_query, 'variables': id_variables})
             self.req.close()
-
             return self.morph_to_v1(request.json())[0]
                 
         except Exception as e:
@@ -208,8 +212,9 @@ class AniList:
     #Returns the anime details based on an id
     def getAnimeDetailsById(self, animeID):
         try:
-            return detailsById(animeID)
+            return self.detailsById(animeID)
         except Exception as e:
+            print(e)
             return None
 
     #Given a list, it finds the closest anime series it can.
@@ -359,16 +364,83 @@ class MALBOT:
         self.bot = bot
         self.anilist = AniList()
         self.bot.anilist = self.anilist
+        self.bot.ani_get_options = self.get_option
+        
+        
+    async def get_option(self, args, mobj, search_type):
+        try:
+            author = mobj.author
+            if search_type == 'LN':
+                searcher = 'MANGA'
+            else:
+                searcher = search_type
+            results = self.anilist.detailsBySearch(args, searcher)
+            if search_type == 'LN':
+                results = [x for x in results if 'novel' in x['type'].lower()]
+            elif search_type == 'MANGA':
+                results = [x for x in results if 'novel' not in x['type'].lower()]
+            potentials = results
+            
+             
+            if len(potentials) == 1:
+                return potentials[0]['id']
+            elif len(potentials) < 1:
+                return None
+            questions = []
+            for cur in potentials:
+                for language in ["title_english", "title_romaji", "title_japanese"]:
+                    if cur[language]:
+                        questions.append((cur[language], cur['id']))
+                        break
+            order = sorted(questions, key = lambda x : fuzz.ratio(args, questions), reverse=True)[:15]
+            cards_ = OrderedDict([(i,v) for i,v in enumerate(order)])
+            
+            message = "```Which series would you like:\n"
+            for anime in cards_.items():
+
+                message += "[{}] {}\n".format(str(anime[0] + 1), anime[1][0])
+
+            message += "\nUse the number to the side of the name as a key to select it!```"
+
+            await self.bot.message(mobj.channel, message)
+
+            msg = await self.bot.client.wait_for_message(timeout=10.0, author=author)
+
+            if not msg:
+                await self.bot.error(mobj.channel, "Operation has timed out, please try again.")
+                return None
+            try:
+                key = int(msg.content) - 1
+            except:
+                await self.bot.error(mobj.channel, "Invalid Key")
+                return None
+            return cards_[key][1]
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
 
     @ChatBot.action("[String]")
     async def anime(self, args, mobj):
 
         """
-        Does a AniList search to find requested Anime. Will return the best guess. Will not return any adult series.
+        Does a AniList search to find requested Anime
+        
+        If there are multiple options, will ask you which one to choose. You will have 10 seconds to respond.
+        
+        Will not return any adult series.
         """
         args = " ".join(args)
         
-        anime = self.anilist.getAnimeDetails(args)
+        result = await self.ani_get_options(args, mobj, 'ANIME')
+        
+        if result:
+            anime = self.anilist.getAnimeDetailsById(result)
+        else:
+            anime = self.anilist.getAnimeDetails(args)
+        if not anime:
+            await self.error(mobj.channel, "Could not find anything")
+            return
         
         
         if not anime:
@@ -388,6 +460,13 @@ class MALBOT:
         embed.add_field(
             name="Dates",
             value=f'{anime["start_date"]} through {anime["end_date"] if anime["end_date"] != "None-None-None" else "present"}' if anime["start_date"] != anime["end_date"] else f'{anime["start_date"]}')
+            
+        if anime["synonyms"]:
+            embed.add_field(
+                name="Synonyms",
+                value=", ".join(anime["synonyms"]))
+        if anime["description"] is None:
+            anime["description"] = "Could not pull synopsis"            
         anime["description"] = re.sub(r'\n\s*\n', '\n\n', unescape(
             anime["description"]).replace("<br>", "\n"))
         if len(anime["description"]) > 1000:
@@ -397,6 +476,7 @@ class MALBOT:
             else:
                 anime["description"] = anime["description"][:965]
             anime["description"] += "\nIncomplete synopsis due to length."
+            
         embed.add_field(
             name="Synopsis",
             value=anime["description"])
@@ -409,10 +489,20 @@ class MALBOT:
     async def manga(self, args, mobj):
 
         """
-        Does a AniList search to find requested Manga. Will return the best guess. Will not return any adult series.
+        Does a AniList search to find requested Manga.
+            
+        If there are multiple options, will ask you which one to choose. You will have 10 seconds to respond.
+            
+        Will not return any adult series.
         """
         args = " ".join(args)
-        manga = self.anilist.getMangaDetails(args)
+        
+        result = await self.ani_get_options(args, mobj, 'MANGA')
+        if result:
+            manga = self.anilist.getMangaDetailsById(result)
+        else:
+            manga = self.anilist.getMangaDetails(args, True)
+        
         if not manga:
             await self.error(mobj.channel, "Could not find anything")
             return
@@ -432,6 +522,13 @@ class MALBOT:
         embed.add_field(
             name="Dates",
             value=f'{manga["start_date"]} through {manga["end_date"] if manga["end_date"] != "None-None-None" else "present"}' if manga["start_date"] != manga["end_date"] else f'{manga["start_date"]}')
+            
+        if manga["synonyms"]:
+            embed.add_field(
+                name="Synonyms",
+                value=", ".join(manga["synonyms"]))
+        if manga["description"] is None:
+            manga["description"] = "Could not pull synopsis"                
         manga["description"] = re.sub(r'\n\s*\n', '\n\n', unescape(
             manga["description"]).replace("<br>", "\n"))
         if len(manga["description"]) > 1000:
@@ -453,50 +550,69 @@ class MALBOT:
 
     @ChatBot.action("[String]")
     async def ln(self, args, mobj):
-
-        """
-        Does a AniList search to find requested Light Novel. Will return the best guess. Will not return any adult series.
-        """
-        args = " ".join(args)
-        manga = self.anilist.getLightNovelDetails(args)
-        if not manga:
-            await self.error(mobj.channel, "Could not find anything")
-            return
-
-        embed = Embed(
-            title=manga['title_english'] if manga['title_english'] else manga['title_romaji'] if manga['title_romaji'] else manga['title_japanese'],
-            colour=Color(0x7289da),
-            url=f"https://anilist.co/manga/{manga['id']}/{manga['title_romaji']}".replace(" ", "%20")
-        )
-        # embed.set_author(name=author.display_name, icon_url=avatar)
-        embed.set_image(url=manga['img'])
-        embed.add_field(
-            name="Length",
-            value=f'{manga["total_chapters"] if manga["total_chapters"] else 0} Chapters, {manga["total_volumes"] if manga["total_volumes"] else 0} Volumes')
-        embed.add_field(name="Type", value=manga["type"])
-        embed.add_field(name="Status", value=manga["airing_status"])
-        embed.add_field(
-            name="Dates",
-            value=f'{manga["start_date"]} through {manga["end_date"] if manga["end_date"] != "None-None-None" else "present"}' if manga["start_date"] != manga["end_date"] else f'{manga["start_date"]}')
-        manga["description"] = re.sub(r'\n\s*\n', '\n\n', unescape(
-            manga["description"]).replace("<br>", "\n"))
-        if len(manga["description"]) > 1000:
-            if "\n" in manga["description"][:965]:
-                manga["description"] = manga["description"][:manga["description"][:965].rfind(
-                    "\n")]
-            else:
-                manga["description"] = manga["description"][:965]
-            manga["description"] += "\nIncomplete synopsis due to length."
-
-        embed.add_field(
-            name="Synopsis",
-            value=manga["description"])
-
         try:
-            await self.embed(mobj.channel, embed)
-        except BaseException:
-            await self.error(mobj.channel, "Something when trying to format the object. Here is a link to the manga: " + "https://myanimelist.net/manga/{0.id}/{0.title}".format(manga).replace(" ", "%20"))
+            """
+            Does a AniList search to find requested Light Novel.
+            
+            If there are multiple options, will ask you which one to choose. You will have 10 seconds to respond.
+            
+            Will not return any adult series.
+            """
+            args = " ".join(args)
+            result = await self.ani_get_options(args, mobj, 'LN')
+            if result:
+                manga = self.anilist.getMangaDetailsById(result)
+            else:
+                manga = self.anilist.getMangaDetails(args)
+            
+            if not manga:
+                await self.error(mobj.channel, "Could not find anything")
+                return
+            embed = Embed(
+                title=manga['title_english'] if manga['title_english'] else manga['title_romaji'] if manga['title_romaji'] else manga['title_japanese'],
+                colour=Color(0x7289da),
+                url=f"https://anilist.co/manga/{manga['id']}/{manga['title_romaji']}".replace(" ", "%20")
+            )
+            # embed.set_author(name=author.display_name, icon_url=avatar)
+            embed.set_image(url=manga['img'])
+            embed.add_field(
+                name="Length",
+                value=f'{manga["total_chapters"] if manga["total_chapters"] else 0} Chapters, {manga["total_volumes"] if manga["total_volumes"] else 0} Volumes')
+            embed.add_field(name="Type", value=manga["type"])
+            embed.add_field(name="Status", value=manga["airing_status"])
+            embed.add_field(
+                name="Dates",
+                value=f'{manga["start_date"]} through {manga["end_date"] if manga["end_date"] != "None-None-None" else "present"}' if manga["start_date"] != manga["end_date"] else f'{manga["start_date"]}')
+                
+            if manga["synonyms"]:
+                embed.add_field(
+                    name="Synonyms",
+                    value=", ".join(manga["synonyms"]))
+                
+            if manga["description"] is None:
+                manga["description"] = "Could not pull synopsis"
+            manga["description"] = re.sub(r'\n\s*\n', '\n\n', unescape(
+                manga["description"]).replace("<br>", "\n"))
+            if len(manga["description"]) > 1000:
+                if "\n" in manga["description"][:965]:
+                    manga["description"] = manga["description"][:manga["description"][:965].rfind(
+                        "\n")]
+                else:
+                    manga["description"] = manga["description"][:965]
+                manga["description"] += "\nIncomplete synopsis due to length."
 
+            embed.add_field(
+                name="Synopsis",
+                value=manga["description"])
+
+            try:
+                await self.embed(mobj.channel, embed)
+            except BaseException:
+                await self.error(mobj.channel, "Something when trying to format the object. Here is a link to the manga: " + "https://myanimelist.net/manga/{0.id}/{0.title}".format(manga).replace(" ", "%20"))
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
 
 def setup(bot):
     MALBOT(bot)
